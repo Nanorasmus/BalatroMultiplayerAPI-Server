@@ -31,6 +31,10 @@ class Client {
 	ante = 1
 	skips = 0
 
+	enemyId: string | null = null
+	inPVPBattle = false
+	phantomKeys: string[] = []
+
 	livesBlocker = false
 
 	location = 'loc_selecting'
@@ -45,16 +49,13 @@ class Client {
 	setLocation = (location: string) => {
 		this.location = location
 		if (this.lobby) {
-			if (this.lobby.host === this) {
-				this.lobby.guest?.sendAction({ action: "enemyLocation", location: this.location })
-			} else {
-				this.lobby.host?.sendAction({ action: "enemyLocation", location: this.location })
-			}
+			this.lobby.broadcastAction({ action: "enemyLocation", playerId: this.id, location: this.location });
 		}
 	}
 
 	setUsername = (username: string) => {
 		this.username = username
+		console.log(username + " and " + (this.lobby == null))
 		this.lobby?.broadcastLobbyInfo()
 	}
 
@@ -76,21 +77,76 @@ class Client {
 			this.lives -= 1
 			this.livesBlocker = true
 			this.sendAction({ action: "playerInfo", lives: this.lives });
-			if (this.lobby && this.lobby.host && this.lobby.guest) {
-				const enemy = this.lobby.host === this ? this.lobby.guest : this.lobby.host
-				enemy.sendAction({
-					action: "enemyInfo",
-					handsLeft: this.handsLeft,
-					score: this.score,
-					skips: this.skips,
-					lives: this.lives,
-				});
-			}
+
+			this.lobby?.broadcastAction({
+				action: "enemyInfo",
+
+				playerId: this.id,
+				handsLeft: this.handsLeft,
+				score: this.score,
+				skips: this.skips,
+				lives: this.lives,
+			});
 		}
 	}
 
 	setSkips = (skips: number) => {
 		this.skips = skips
+	}
+
+	removePhantomsFromEnemy = () => {
+		if (!this.lobby || !this.enemyId) return;
+
+		const enemy = this.lobby.getPlayer(this.enemyId);
+
+		this.phantomKeys.forEach((key) => enemy?.sendAction({ action: "removePhantom", key }));	
+	}
+
+	setEnemy = (enemy: Client) => {
+		if (!this.lobby) return;
+
+		// Check if new enemy is null
+		if (enemy === null) {
+			console.log("SetEnemy was asked to set enemy to null! please use clearEnemy instead");
+			return;
+		}
+
+		// Clear old enemy of phantoms
+		if (this.enemyId) {
+			this.removePhantomsFromEnemy();
+		}
+
+		// Set enemy
+		this.enemyId = enemy.id
+		this.lobby?.broadcastAction({
+			action: "enemyInfo",
+
+			playerId: this.id,
+			enemyId: this.enemyId,
+			handsLeft: this.handsLeft,
+			score: this.score,
+			skips: this.skips,
+			lives: this.lives,
+		});
+
+		// Send all phantoms to the new enemy
+		this.phantomKeys.forEach((key) => enemy.sendAction({ action: "sendPhantom", key }));
+	}
+
+	clearEnemy = () => {
+		this.removePhantomsFromEnemy();
+
+		this.enemyId = null;
+		this.lobby?.broadcastAction({
+			action: "enemyInfo",
+
+			playerId: this.id,
+			enemyId: "",
+			handsLeft: this.handsLeft,
+			score: this.score,
+			skips: this.skips,
+			lives: this.lives,
+		});
 	}
 }
 

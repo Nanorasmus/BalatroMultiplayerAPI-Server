@@ -1,3 +1,4 @@
+import { randomInt } from "crypto";
 import type Client from "./Client.js";
 import GameModes from "./GameMode.js";
 import type {
@@ -5,6 +6,8 @@ import type {
 	ActionServerToClient,
 	GameMode,
 } from "./actions.js";
+import { processStringForNetworking } from "./utils.js";
+import { serializeObject } from "./main.js";
 
 const Lobbies = new Map();
 
@@ -20,19 +23,20 @@ const generateUniqueLobbyCode = (): string => {
 export const getEnemy = (client: Client): [Lobby | null, Client | null] => {
 	const lobby = client.lobby
 	if (!lobby) return [null, null]
-	if (lobby.host?.id === client.id) {
-		return [lobby, lobby.guest]
-	} else if (lobby.guest?.id === client.id) {
-		return [lobby, lobby.host]
+
+	if (client.enemyId != null) {
+		const enemy = lobby.getPlayer(client.enemyId);
+		if (enemy) return [lobby, enemy]
 	}
+
 	return [lobby, null]
 }
 
 class Lobby {
 	code: string;
-	host: Client | null;
-	guest: Client | null;
+	players: Client[];
 	gameMode: GameMode;
+	isStarted = false;
 	// biome-ignore lint/suspicious/noExplicitAny: 
 	options: { [key: string]: any };
 
@@ -43,8 +47,8 @@ class Lobby {
 		} while (Lobbies.get(this.code));
 		Lobbies.set(this.code, this);
 
-		this.host = host;
-		this.guest = null;
+		console.log(host.id + " created lobby " + this.code);
+		this.players = [host];
 		this.gameMode = gameMode;
 		this.options = {};
 
@@ -60,35 +64,83 @@ class Lobby {
 		return Lobbies.get(code);
 	};
 
+	getPlayer = (id: string): Client | null => {
+		const player = this.players.find((player) => player.id === id);
+		return player == undefined ? null : player;
+	}
+
+	isHost(client: Client): boolean {
+		if (this.players.length === 0) return false
+		return client.id === this.players[0].id;
+	}
+
+	allPlayersReady(): boolean {
+		return this.players.every((player) => player.lives == 0 || player.isReady);
+	}
+
+	// Returns the winner, or null if game is not over yet
+	getWinner(): Client | null {
+		let potentialWinner: Client | null = null;
+		for (const player of this.players) {
+			if (player.lives > 0) {
+				if (potentialWinner) return null
+				potentialWinner = player
+			}
+		}
+		return potentialWinner;
+	}
+
 	leave = (client: Client) => {
-		if (this.host?.id === client.id) {
-			this.host = this.guest;
-			this.guest = null;
-		} else if (this.guest?.id === client.id) {
-			this.guest = null;
+		// Remove client from lobby
+		const clientIndex = this.players.indexOf(client);
+		if (clientIndex !== -1) {
+			this.players.splice(clientIndex, 1);
 		}
 
 		client.setLobby(null);
-		if (this.host === null) {
+		if (this.players.length === 0) {
 			Lobbies.delete(this.code);
 		} else {
-			// TODO: Refactor for more than 2 players
-			// Stop game if someone leaves
-			this.broadcastAction({ action: "stopGame" });
-			this.resetPlayers();
+			if (this.isStarted) {
+				// End game if less than 2 players are left
+				if (this.players.length < 2) {
+					this.broadcastAction({ action: "stopGame" });
+					this.resetPlayers();
+				}
+
+				// Handle the abandoned nemesis
+				else if (client.enemyId != null) {
+					const enemy = this.getPlayer(client.enemyId);
+
+					if (enemy != null) {
+						if (enemy.inPVPBattle) {
+							enemy.sendAction({ action: "endPvP", lost: false });
+						}
+						enemy.enemyId = null;
+					}
+				}
+			}
+
 			this.broadcastLobbyInfo();
 		}
 	};
 
 	join = (client: Client) => {
-		if (this.guest) {
+		// Ignore if player is already in game
+		if (this.players.indexOf(client) !== -1) {
+			return;
+		}
+
+		// Error if game is ongoing or lobby is full
+		if (this.players.length >= 8 || this.isStarted) {
 			client.sendAction({
 				action: "error",
-				message: "Lobby is full or does not exist.",
+				message: "Lobby is full, has already started, or does not exist.",
 			});
 			return;
 		}
-		this.guest = client;
+
+		this.players.push(client);
 		client.setLobby(this);
 		client.sendAction({
 			action: "joinedLobby",
@@ -100,44 +152,72 @@ class Lobby {
 	};
 
 	broadcastAction = (action: ActionServerToClient) => {
-		this.host?.sendAction(action);
-		this.guest?.sendAction(action);
+		this.players.forEach(player => {
+			player?.sendAction(action);
+		});
 	};
 
 	broadcastLobbyInfo = () => {
-		if (!this.host) {
+		if (this.players.length == 0) {
 			return;
 		}
 
-		const action: ActionLobbyInfo = {
-			action: "lobbyInfo",
-			host: this.host.username,
-			hostHash: this.host.modHash,
-			isHost: false,
-		};
+		// Get list of everyone in the lobby
+		const playerStrings: string[] = []
 
-		if (this.guest?.username) {
-			action.guest = this.guest.username;
-			action.guestHash = this.guest.modHash;
-			this.guest.sendAction(action);
+		for (const player of this.players) {
+			const playerInfo = {
+				"id": processStringForNetworking(player.id),
+				"username": processStringForNetworking(player.username),
+				"hash": processStringForNetworking(player.modHash),
+				"isHost": this.isHost(player)
+			}
+			
+			playerStrings.push(serializeObject(playerInfo, "-", ">"));
 		}
 
-		// Should only sent true to the host
-		action.isHost = true;
-		this.host.sendAction(action);
+		// Join the list into a single string with a semicolon seperator
+		const playerString = playerStrings.join("|");
+
+		console.log(playerString);
+
+		// Send action to each player, telling them about themselves and their nemesis
+		this.players.forEach(player => {
+			let action: ActionLobbyInfo;
+
+			let enemy: Client | null = null;
+
+			// Get enemy
+			if (this.isStarted && player.enemyId != null) {
+				enemy = this.getPlayer(player.enemyId);
+			}
+
+			// Make action
+			action = {
+				action: "lobbyInfo",
+
+				playerId: player.id,
+				players: playerString,
+				isStarted: this.isStarted,
+			};
+			
+			// Send action
+			player.sendAction(action);
+		});
 	};
 
 	setPlayersLives = (lives: number) => {
 		// TODO: Refactor for more than 2 players
-		if (this.host) this.host.lives = lives;
-		if (this.guest) this.guest.lives = lives;
+		this.players.forEach(player => {
+			player.lives = lives;
+		});
 
 		this.broadcastAction({ action: "playerInfo", lives });
 	};
 
 	// Deprecated
 	sendGameInfo = (client: Client) => {
-		if (this.host !== client && this.guest !== client) {
+		if (this.players.indexOf(client) === -1) {
 			return client.sendAction({
 				action: "error",
 				message: "Client not in Lobby",
@@ -158,19 +238,62 @@ class Lobby {
 				this.options[key] = options[key];
 			}
 		}
-		this.guest?.sendAction({ action: "lobbyOptions", gamemode: this.gameMode, ...options });
+		this.players.forEach(player => {
+			if (this.players.indexOf(player) > 0) {
+				player?.sendAction({ action: "lobbyOptions", gamemode: this.gameMode, ...options });
+			}
+		})
 	};
 
 	resetPlayers = () => {
-		if (this.host) {
-			this.host.isReady = false;
-			this.host.resetBlocker();
-			this.host.setLocation("Blind Select");
+		this.players.forEach(player => {
+			player.isReady = false;
+			player.resetBlocker();
+			player.setLocation("Blind Select");
+		})
+	}
+
+	checkRerollEnemies = () => {
+		// Return if game is not started, less than 2 players remaining, or if someone still has a nemesis
+		if (
+			!this.isStarted
+			|| this.players.length < 2
+			|| !this.players.every(player => player.enemyId == null)
+		) return;
+
+		this.rerollEnemies();
+	}
+
+	rerollEnemies = () => {
+		let playersLeft: Client[] = Array.from(this.players)
+		
+		// Remove any invalid picks
+		playersLeft = playersLeft.filter(player => {
+			return player.lives > 0;
+		});
+
+		while (playersLeft.length >= 2) {
+			const player1 = playersLeft.splice(randomInt(playersLeft.length), 1)[0];
+			const player2 = playersLeft.splice(randomInt(playersLeft.length), 1)[0];
+			player1.setEnemy(player2);
+			player2.setEnemy(player1);
 		}
-		if (this.guest) {
-			this.guest.isReady = false;
-			this.guest.resetBlocker();
-			this.guest.setLocation("Blind Select");
+
+		if (playersLeft.length === 1) {
+			playersLeft[0].clearEnemy();
+		}
+
+		this.broadcastLobbyInfo();
+	}
+
+	checkGameOver = () => {
+		const winner = this.getWinner();
+
+		if (winner) {
+			winner.sendAction({ action: "winGame" });
+
+			this.isStarted = false;
+			this.broadcastLobbyInfo();
 		}
 	}
 }

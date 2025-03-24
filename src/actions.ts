@@ -4,11 +4,9 @@ export type ActionError = { action: 'error'; message: string }
 export type ActionJoinedLobby = { action: 'joinedLobby'; code: string; type: GameMode }
 export type ActionLobbyInfo = {
 	action: 'lobbyInfo'
-	host: string
-	hostHash: string
-	guest?: string
-	guestHash?: string
-	isHost: boolean
+	playerId: string
+	players: string
+	isStarted: boolean
 }
 export type ActionStopGame = { action: 'stopGame' }
 export type ActionStartGame = {
@@ -29,6 +27,8 @@ export type ActionGameInfo = {
 export type ActionPlayerInfo = { action: 'playerInfo'; lives: number }
 export type ActionEnemyInfo = {
 	action: 'enemyInfo'
+	playerId: string
+	enemyId?: string
 	score: BigInt
 	handsLeft: number
 	skips: number
@@ -37,7 +37,7 @@ export type ActionEnemyInfo = {
 export type ActionEndPvP = { action: 'endPvP'; lost: boolean }
 export type ActionLobbyOptions = { action: 'lobbyOptions', gamemode: string }
 export type ActionRequestVersion = { action: 'version' }
-export type ActionEnemyLocation = { action: 'enemyLocation'; location: string }
+export type ActionEnemyLocation = { action: 'enemyLocation'; playerId: string; location: string }
 export type ActionSendPhantom = { action: 'sendPhantom', key: string }
 export type ActionRemovePhantom = { action: 'removePhantom', key: string }
 export type ActionSpeedrun = { action: 'speedrun' }
@@ -45,7 +45,7 @@ export type ActionAsteroid = { action: 'asteroid' }
 export type ActionLetsGoGamblingNemesis = { action: 'letsGoGamblingNemesis' }
 export type ActionEatPizza = { action: 'eatPizza', whole: boolean }
 export type ActionSoldJoker = { action: 'soldJoker' }
-export type ActionSpentLastShop = { action: 'spentLastShop', amount: number }
+export type ActionSpentLastShop = { action: 'spentLastShop', playerId: string, amount: number }
 export type ActionMagnet = { action: 'magnet' }
 export type ActionMagnetResponse = { action: 'magnetResponse', key: string }
 export type ActionGetEndGameJokersRequest = { action: 'getEndGameJokers' }

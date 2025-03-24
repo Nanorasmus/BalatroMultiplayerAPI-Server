@@ -9,3 +9,21 @@ export function generateSeed(length = 5) {
 	}
 	return result
 }
+
+export function randomInt(max: number): number {
+	return Math.floor(Math.random() * max);
+}
+export function randomIntRange(min: number, max: number): number {
+	return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+// Turn any characters necessary for parsing into a special sequence
+export function processStringForNetworking(str: string): string {
+	return str			
+	.replaceAll(',', "{a}") // Needed to seperate action values
+	.replaceAll(':', "{b}") // Needed to parse action values
+
+	.replaceAll('|', "{c}") // Needed to seperate sub-list entries
+	.replaceAll('-', "{d}") // Needed to seperate sub-list entry values
+	.replaceAll('>', "{e}"); // Needed to parse sub-list entry values
+}

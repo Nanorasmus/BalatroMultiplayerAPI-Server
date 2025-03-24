@@ -76,12 +76,12 @@ const stringToJson = (str: string): any => {
 }
 
 /** Serializes an action for transmission to the client */
-export const serializeAction = (action: Action): string => {
+export const serializeObject = (action: Object, entrySeperator = ',', keyValueSeperator = ':'): string => {
 	const entries = Object.entries(action)
 	const parts = entries
 		.filter(([_key, value]) => value !== undefined && value !== null)
-		.map(([key, value]) => `${key}:${value}`)
-	return parts.join(',')
+		.map(([key, value]) => `${key}${keyValueSeperator}${value}`)
+	return parts.join(entrySeperator)
 }
 
 const sendActionToSocket =
@@ -90,7 +90,7 @@ const sendActionToSocket =
 			return
 		}
 
-		const data = serializeAction(action)
+		const data = serializeObject(action)
 
 		const { action: actionName, ...actionArgs } = action
 

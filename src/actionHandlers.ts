@@ -17,6 +17,7 @@ import type {
 	ActionSetLocation,
 	ActionSkip,
 	ActionSpentLastShop,
+	ActionSpentLastShopRequest,
 	ActionStartAnteTimer,
 	ActionUsername,
 	ActionVersion,
@@ -70,13 +71,14 @@ const keepAliveAction = (client: Client) => {
 const startGameAction = (client: Client) => {
 	const lobby = client.lobby;
 	// Only allow the host to start the game
-	if (!lobby || lobby.host?.id !== client.id) {
+	if (!lobby || !lobby.isHost(client)) {
 		return;
 	}
 
 	const lives = lobby.options.starting_lives
 		? Number.parseInt(lobby.options.starting_lives)
 		: GameModes[lobby.gameMode].startingLives;
+	
 
 	lobby.broadcastAction({
 		action: "startGame",
@@ -85,6 +87,13 @@ const startGameAction = (client: Client) => {
 	});
 	// Reset players' lives
 	lobby.setPlayersLives(lives);
+
+	// Roll for who is whose nemesis
+	lobby.rerollEnemies();
+	
+	// Set the game as started
+	lobby.isStarted = true;
+	lobby.broadcastLobbyInfo();
 };
 
 const readyBlindAction = (client: Client) => {
@@ -98,20 +107,22 @@ const readyBlindAction = (client: Client) => {
 	}
 
 	// TODO: Refactor for more than two players
-	if (client.lobby?.host?.isReady && client.lobby.guest?.isReady) {
-		// Reset ready status for next blind
-		client.lobby.host.isReady = false;
-		client.lobby.guest.isReady = false;
+	if (client.lobby?.allPlayersReady()) {
+		client.lobby.players.forEach((player) => {
+			// Reset ready status for next blind
+			player.isReady = false;
+			
+			// Reset scores for next blind
+			player.score = 0n;
 
-		// Reset scores for next blind
-		client.lobby.host.score = 0n;
-		client.lobby.guest.score = 0n;
+			// Reset hands left for next blind
+			player.handsLeft = 4;
 
-		// Reset hands left for next blind
-		client.lobby.host.handsLeft = 4;
-		client.lobby.guest.handsLeft = 4;
+			player.sendAction({ action: "startBlind" });
 
-		client.lobby.broadcastAction({ action: "startBlind" });
+			// Start the blind
+			player.inPVPBattle = true;
+		})
 	}
 };
 
@@ -125,7 +136,7 @@ const playHandAction = (
 ) => {
 	const [lobby, enemy] = getEnemy(client)
 
-	if (lobby === null || enemy === null || lobby.host === null || lobby.guest === null) {
+	if (lobby === null || lobby.players.length < 2) {
 		stopGameAction(client);
 		return
 	}
@@ -135,55 +146,74 @@ const playHandAction = (
 	client.handsLeft =
 		typeof handsLeft === "number" ? handsLeft : Number(handsLeft);
 
-	enemy.sendAction({
-		action: "enemyInfo",
-		handsLeft,
-		score: client.score,
-		skips: client.skips,
-		lives: client.lives,
-	});
+	if (!client.inPVPBattle) return;
+	
+	if (enemy == null) {
+		// Let them play 1 hand against noone
+		client.firstReady = false
+		client.inPVPBattle = false
 
-	// This info is only sent on a boss blind, so it shouldn't
-	// affect other blinds
-	if (
-		(lobby.guest.handsLeft === 0 && lobby.host.score > lobby.guest.score) ||
-		(lobby.host.handsLeft === 0 && lobby.guest.score > lobby.host.score) ||
-		(lobby.host.handsLeft === 0 && lobby.guest.handsLeft === 0)
-	) {
-		const roundWinner =
-			lobby.host.score > lobby.guest.score ? lobby.host : lobby.guest;
-		const roundLoser =
-			roundWinner.id === lobby.host.id ? lobby.guest : lobby.host;
+		client.sendAction({ action: "endPvP", lost: false });
+	} else {
+		// Actual PVP
+		client.lobby?.broadcastAction({
+			action: "enemyInfo",
 
-		if (lobby.host.score !== lobby.guest.score) {
-			roundLoser.loseLife();
-
-			// If no lives are left, we end the game
-			if (lobby.host.lives === 0 || lobby.guest.lives === 0) {
-				const gameWinner =
-					lobby.host.lives > lobby.guest.lives ? lobby.host : lobby.guest;
-				const gameLoser =
-					gameWinner.id === lobby.host.id ? lobby.guest : lobby.host;
-
-				gameWinner?.sendAction({ action: "winGame" });
-				gameLoser?.sendAction({ action: "loseGame" });
-				return;
+			playerId: client.id,
+			handsLeft,
+			score: client.score,
+			skips: client.skips,
+			lives: client.lives,
+		});
+	
+		// This info is only sent on a boss blind, so it shouldn't
+		// affect other blinds
+		if (
+			(client.handsLeft === 0 && enemy.score > client.score) ||
+			(enemy.handsLeft === 0 && client.score > enemy.score) ||
+			(enemy.handsLeft === 0 && client.handsLeft === 0)
+		) {
+			const roundWinner =
+				enemy.score > client.score ? enemy : client;
+			const roundLoser =
+				roundWinner.id === client.id ? enemy : client;
+	
+			if (roundWinner.score !== roundLoser.score) {
+				roundLoser.loseLife();
+	
+				// If no lives are left, kill them off
+				if (roundLoser.lives === 0) {
+					roundLoser?.sendAction({ action: "loseGame" });
+					roundWinner.sendAction({ action: "endPvP", lost: false });
+	
+					// Is the game over?				
+					roundWinner.lobby?.checkGameOver();
+					return;
+				}
 			}
-		}
+	
+			roundWinner.firstReady = false
+			roundWinner.inPVPBattle = false
+			roundWinner.enemyId = null
 
-		roundWinner.firstReady = false
-		roundLoser.firstReady = false
-		roundWinner.sendAction({ action: "endPvP", lost: false });
-		roundLoser.sendAction({ action: "endPvP", lost: lobby.host.score !== lobby.guest.score });
+			roundLoser.firstReady = false
+			roundLoser.inPVPBattle = false
+			roundLoser.enemyId = null
+			
+			roundWinner.sendAction({ action: "endPvP", lost: false });
+			roundLoser.sendAction({ action: "endPvP", lost: roundWinner.score !== roundLoser.score });
+			
+		}
 	}
+	
+	client.lobby?.checkRerollEnemies();
 };
 
 const stopGameAction = (client: Client) => {
 	if (!client.lobby) {
 		return;
 	}
-	client.lobby.broadcastAction({ action: "stopGame" });
-	client.lobby.resetPlayers();
+	client.sendAction({ action: "stopGame" });
 };
 
 // Deprecated
@@ -206,20 +236,12 @@ const failRoundAction = (client: Client) => {
 	if (lobby.options.death_on_round_loss) {
 		client.loseLife()
 	}
+	
 
 	if (client.lives === 0) {
-		let gameLoser = null;
-		let gameWinner = null;
-		if (client.id === lobby.host?.id) {
-			gameLoser = lobby.host;
-			gameWinner = lobby.guest;
-		} else {
-			gameLoser = lobby.guest;
-			gameWinner = lobby.host;
-		}
+		client.sendAction({ action: "loseGame" });
 
-		gameWinner?.sendAction({ action: "winGame" });
-		gameLoser?.sendAction({ action: "loseGame" });
+		lobby.checkGameOver();
 	}
 };
 
@@ -265,11 +287,11 @@ const newRoundAction = (client: Client) => {
 }
 
 const skipAction = ({ skips }: ActionHandlerArgs<ActionSkip>, client: Client) => {
-	const [lobby, enemy] = getEnemy(client)
 	client.setSkips(skips)
-	if (!lobby || !enemy) return;
-	enemy.sendAction({
+	if (!client.lobby) return;
+	client.lobby?.broadcastAction({
 		action: "enemyInfo",
+		playerId: client.id,
 		handsLeft: client.handsLeft,
 		score: client.score,
 		skips: client.skips,
@@ -280,6 +302,7 @@ const skipAction = ({ skips }: ActionHandlerArgs<ActionSkip>, client: Client) =>
 const sendPhantomAction = ({ key }: ActionHandlerArgs<ActionSendPhantom>, client: Client) => {
 	const [lobby, enemy] = getEnemy(client)
 	if (!lobby || !enemy) return;
+	client.phantomKeys.push(key);
 	enemy.sendAction({
 		action: "sendPhantom",
 		key
@@ -289,6 +312,7 @@ const sendPhantomAction = ({ key }: ActionHandlerArgs<ActionSendPhantom>, client
 const removePhantomAction = ({ key }: ActionHandlerArgs<ActionRemovePhantom>, client: Client) => {
 	const [lobby, enemy] = getEnemy(client)
 	if (!lobby || !enemy) return;
+	client.phantomKeys.splice(client.phantomKeys.indexOf(key), 1);
 	enemy.sendAction({
 		action: "removePhantom",
 		key
@@ -328,11 +352,11 @@ const soldJokerAction = (client: Client) => {
 	})
 }
 
-const spentLastShopAction = ({ amount }: ActionHandlerArgs<ActionSpentLastShop>, client: Client) => {
-	const [lobby, enemy] = getEnemy(client)
-	if (!lobby || !enemy) return;
-	enemy.sendAction({
+const spentLastShopAction = ({ amount }: ActionHandlerArgs<ActionSpentLastShopRequest>, client: Client) => {
+	if (!client.lobby) return;
+	client.lobby.broadcastAction({
 		action: "spentLastShop",
+		playerId: client.id,
 		amount
 	})
 }
@@ -388,18 +412,9 @@ const failTimerAction = (client: Client) => {
 	if (!lobby) return;
 
 	if (client.lives === 0) {
-		let gameLoser = null;
-		let gameWinner = null;
-		if (client.id === lobby.host?.id) {
-			gameLoser = lobby.host;
-			gameWinner = lobby.guest;
-		} else {
-			gameLoser = lobby.guest;
-			gameWinner = lobby.host;
-		}
+		client.sendAction({ action: "loseGame" });
 
-		gameWinner?.sendAction({ action: "winGame" });
-		gameLoser?.sendAction({ action: "loseGame" });
+		lobby.checkGameOver();
 	}
 }
 
