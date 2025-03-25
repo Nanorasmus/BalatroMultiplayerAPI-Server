@@ -106,24 +106,8 @@ const readyBlindAction = (client: Client) => {
 		client.sendAction({ action: "speedrun" })
 	}
 
-	// TODO: Refactor for more than two players
-	if (client.lobby?.allPlayersReady()) {
-		client.lobby.players.forEach((player) => {
-			// Reset ready status for next blind
-			player.isReady = false;
-			
-			// Reset scores for next blind
-			player.score = 0n;
-
-			// Reset hands left for next blind
-			player.handsLeft = 4;
-
-			player.sendAction({ action: "startBlind" });
-
-			// Start the blind
-			player.inPVPBattle = true;
-		})
-	}
+	// Check if PVP blind should start
+	client.lobby?.checkAllReady();
 };
 
 const unreadyBlindAction = (client: Client) => {
@@ -153,6 +137,7 @@ const playHandAction = (
 		client.firstReady = false
 		client.inPVPBattle = false
 
+		client.sendAction({ action: "message", locKey: "msg_no_enemy" });
 		client.sendAction({ action: "endPvP", lost: false });
 	} else {
 		// Actual PVP
@@ -180,25 +165,15 @@ const playHandAction = (
 	
 			if (roundWinner.score !== roundLoser.score) {
 				roundLoser.loseLife();
-	
-				// If no lives are left, kill them off
-				if (roundLoser.lives === 0) {
-					roundLoser?.sendAction({ action: "loseGame" });
-					roundWinner.sendAction({ action: "endPvP", lost: false });
-	
-					// Is the game over?				
-					roundWinner.lobby?.checkGameOver();
-					return;
-				}
 			}
 	
-			roundWinner.firstReady = false
-			roundWinner.inPVPBattle = false
-			roundWinner.enemyId = null
+			roundWinner.firstReady = false;
+			roundWinner.inPVPBattle = false;
+			roundWinner.clearEnemy();
 
-			roundLoser.firstReady = false
-			roundLoser.inPVPBattle = false
-			roundLoser.enemyId = null
+			roundLoser.firstReady = false;
+			roundLoser.inPVPBattle = false;
+			roundLoser.clearEnemy();
 			
 			roundWinner.sendAction({ action: "endPvP", lost: false });
 			roundLoser.sendAction({ action: "endPvP", lost: roundWinner.score !== roundLoser.score });
@@ -235,13 +210,6 @@ const failRoundAction = (client: Client) => {
 
 	if (lobby.options.death_on_round_loss) {
 		client.loseLife()
-	}
-	
-
-	if (client.lives === 0) {
-		client.sendAction({ action: "loseGame" });
-
-		lobby.checkGameOver();
 	}
 };
 
@@ -396,9 +364,8 @@ const receiveEndGameJokersAction = ({ keys }: ActionHandlerArgs<ActionReceiveEnd
 }
 
 const startAnteTimerAction = ({ time }: ActionHandlerArgs<ActionStartAnteTimer>, client: Client) => {
-	const [lobby, enemy] = getEnemy(client)
-	if (!lobby || !enemy) return;
-	enemy.sendAction({
+	if (!client.lobby) return;
+	client.lobby.broadcastAction({
 		action: "startAnteTimer",
 		time
 	})
@@ -407,15 +374,7 @@ const startAnteTimerAction = ({ time }: ActionHandlerArgs<ActionStartAnteTimer>,
 const failTimerAction = (client: Client) => {
 	const lobby = client.lobby;
 
-	client.loseLife()
-
-	if (!lobby) return;
-
-	if (client.lives === 0) {
-		client.sendAction({ action: "loseGame" });
-
-		lobby.checkGameOver();
-	}
+	client.loseLife();
 }
 
 export const actionHandlers = {

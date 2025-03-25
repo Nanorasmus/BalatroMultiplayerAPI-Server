@@ -47,7 +47,6 @@ class Lobby {
 		} while (Lobbies.get(this.code));
 		Lobbies.set(this.code, this);
 
-		console.log(host.id + " created lobby " + this.code);
 		this.players = [host];
 		this.gameMode = gameMode;
 		this.options = {};
@@ -74,8 +73,28 @@ class Lobby {
 		return client.id === this.players[0].id;
 	}
 
-	allPlayersReady(): boolean {
+	getAllPlayersReady(): boolean {
 		return this.players.every((player) => player.lives == 0 || player.isReady);
+	}
+
+	checkAllReady = () => {
+		if (this.getAllPlayersReady()) {
+			this.players.forEach((player) => {
+				// Reset ready status for next blind
+				player.isReady = false;
+				
+				// Reset scores for next blind
+				player.score = 0n;
+	
+				// Reset hands left for next blind
+				player.handsLeft = 4;
+	
+				player.sendAction({ action: "startBlind" });
+	
+				// Start the blind
+				player.inPVPBattle = true;
+			})
+		}
 	}
 
 	// Returns the winner, or null if game is not over yet
@@ -116,12 +135,13 @@ class Lobby {
 						if (enemy.inPVPBattle) {
 							enemy.sendAction({ action: "endPvP", lost: false });
 						}
-						enemy.enemyId = null;
+						enemy.clearEnemy();
 					}
 				}
 			}
 
 			this.broadcastLobbyInfo();
+			this.checkAllReady();
 		}
 	};
 
@@ -132,7 +152,7 @@ class Lobby {
 		}
 
 		// Error if game is ongoing or lobby is full
-		if (this.players.length >= 8 || this.isStarted) {
+		if (this.players.length >= 16 || this.isStarted) {
 			client.sendAction({
 				action: "error",
 				message: "Lobby is full, has already started, or does not exist.",
@@ -178,8 +198,6 @@ class Lobby {
 
 		// Join the list into a single string with a semicolon seperator
 		const playerString = playerStrings.join("|");
-
-		console.log(playerString);
 
 		// Send action to each player, telling them about themselves and their nemesis
 		this.players.forEach(player => {
@@ -254,17 +272,21 @@ class Lobby {
 	}
 
 	checkRerollEnemies = () => {
+		console.log("Checking reroll:\n" + this.players.map(player => `${player.username} (${player.enemyId})`).join(",\n"));
+
 		// Return if game is not started, less than 2 players remaining, or if someone still has a nemesis
 		if (
 			!this.isStarted
 			|| this.players.length < 2
-			|| !this.players.every(player => player.enemyId == null)
+			|| !this.players.every(player => player.lives <= 0 || player.enemyId == null)
 		) return;
 
 		this.rerollEnemies();
 	}
 
 	rerollEnemies = () => {
+		console.log("Rerolling");
+
 		let playersLeft: Client[] = Array.from(this.players)
 		
 		// Remove any invalid picks

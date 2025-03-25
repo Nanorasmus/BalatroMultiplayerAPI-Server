@@ -2,6 +2,7 @@ import { type AddressInfo } from 'node:net'
 import { v4 as uuidv4 } from 'uuid'
 import type Lobby from './Lobby.js'
 import type { ActionServerToClient } from './actions.js'
+import { getEnemy } from './Lobby.js'
 
 type SendFn = (action: ActionServerToClient) => void
 type CloseConnFn = () => void
@@ -25,7 +26,7 @@ class Client {
 	/** Whether player is ready for next blind */
 	isReady = false
 	firstReady = false
-	lives = 5
+	lives = 0
 	score = 0n
 	handsLeft = 4
 	ante = 1
@@ -88,6 +89,25 @@ class Client {
 				lives: this.lives,
 			});
 		}
+
+		if (this.lives <= 0) {
+			this.sendAction({ action: "loseGame" });
+
+			// Handle the abandoned nemesis
+			if (this.enemyId != null) {
+				const enemy = this.lobby?.getPlayer(this.enemyId);
+
+				if (enemy != null) {
+					if (enemy.inPVPBattle) {
+						enemy.sendAction({ action: "endPvP", lost: false });
+					}
+					enemy.clearEnemy();
+				}
+			}
+	
+			this.lobby?.checkGameOver();
+			this.lobby?.checkAllReady();
+		}
 	}
 
 	setSkips = (skips: number) => {
@@ -104,6 +124,8 @@ class Client {
 
 	setEnemy = (enemy: Client) => {
 		if (!this.lobby) return;
+		
+		console.log(`Setting enemy of ${this.username} to ${enemy.username}!`);
 
 		// Check if new enemy is null
 		if (enemy === null) {

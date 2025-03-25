@@ -1,6 +1,7 @@
 // Server to Client
 export type ActionConnected = { action: 'connected' }
 export type ActionError = { action: 'error'; message: string }
+export type ActionMessage = { action: 'message'; locKey: string }
 export type ActionJoinedLobby = { action: 'joinedLobby'; code: string; type: GameMode }
 export type ActionLobbyInfo = {
 	action: 'lobbyInfo'
@@ -54,6 +55,7 @@ export type ActionStartAnteTimer = { action: 'startAnteTimer', time: number }
 export type ActionServerToClient =
 	| ActionConnected
 	| ActionError
+	| ActionMessage
 	| ActionJoinedLobby
 	| ActionLobbyInfo
 	| ActionStopGame
