@@ -74,6 +74,8 @@ class Lobby {
 	}
 
 	getAllPlayersReady(): boolean {
+		if (!this.isStarted) return false;
+		
 		return this.players.every((player) => player.lives <= 0 || player.isReady);
 	}
 
@@ -109,14 +111,17 @@ class Lobby {
 		return potentialWinner;
 	}
 
-	leave = (client: Client) => {
-		// Remove client from lobby
-		const clientIndex = this.players.indexOf(client);
-		if (clientIndex !== -1) {
-			this.players.splice(clientIndex, 1);
+	removePlayerFromGame = (client: Client, removeFromLobby = true) => {
+		if (removeFromLobby) {
+			// Remove client from lobby
+			const clientIndex = this.players.indexOf(client);
+			if (clientIndex !== -1) {
+				this.players.splice(clientIndex, 1);
+			}
+	
+			client.setLobby(null);
 		}
 
-		client.setLobby(null);
 		if (this.players.length === 0) {
 			Lobbies.delete(this.code);
 		} else {
@@ -138,10 +143,12 @@ class Lobby {
 						enemy.clearEnemy();
 					}
 				}
+				this.checkAllReady();
 			}
 
+			client.resetStats();
+
 			this.broadcastLobbyInfo();
-			this.checkAllReady();
 		}
 	};
 
@@ -265,9 +272,7 @@ class Lobby {
 
 	resetPlayers = () => {
 		this.players.forEach(player => {
-			player.isReady = false;
-			player.resetBlocker();
-			player.setLocation("Blind Select");
+			player.reset();
 		})
 	}
 
@@ -317,6 +322,7 @@ class Lobby {
 				winner.sendEndGameJokersOfPlayer(winner.enemyId);
 			}
 
+			this.resetPlayers();
 			this.isStarted = false;
 			this.broadcastLobbyInfo();
 		}

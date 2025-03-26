@@ -8,6 +8,7 @@ import type {
 	ActionEatPizza,
 	ActionHandlerArgs,
 	ActionJoinLobby,
+	ActionKickPlayer,
 	ActionLobbyOptions,
 	ActionMagnet,
 	ActionMagnetResponse,
@@ -198,6 +199,12 @@ const server = createServer((socket) => {
 						break
 					case 'leaveLobby':
 						actionHandlers.leaveLobby(client)
+						break
+					case 'kickPlayer':
+						actionHandlers.kickPlayer(
+							actionArgs as ActionHandlerArgs<ActionKickPlayer>,
+							client,
+						)
 						break
 					case 'startGame':
 						actionHandlers.startGame(client)

@@ -7,6 +7,7 @@ import type {
 	ActionHandlerArgs,
 	ActionHandlers,
 	ActionJoinLobby,
+	ActionKickPlayer,
 	ActionMagnet,
 	ActionMagnetResponse,
 	ActionPlayHand,
@@ -57,8 +58,23 @@ const joinLobbyAction = (
 };
 
 const leaveLobbyAction = (client: Client) => {
-	client.lobby?.leave(client);
+	client.lobby?.removePlayerFromGame(client);
 };
+
+const kickPlayerAction = (
+	{ playerId }: ActionHandlerArgs<ActionKickPlayer>,
+	client: Client
+) => {
+	if (!client.lobby || !client.lobby.isHost(client)) return;
+
+	const player = client.lobby.getPlayer(playerId);
+	if (!player) return;
+
+	client.lobby?.removePlayerFromGame(player);
+	player.sendAction({
+		action: "kickedFromLobby"
+	})
+}
 
 const lobbyInfoAction = (client: Client) => {
 	client.lobby?.broadcastLobbyInfo();
@@ -75,6 +91,7 @@ const startGameAction = (client: Client) => {
 	if (!lobby || !lobby.isHost(client)) {
 		return;
 	}
+	console.log("Starting game...");
 
 	const lives = lobby.options.starting_lives
 		? Number.parseInt(lobby.options.starting_lives)
@@ -377,6 +394,7 @@ export const actionHandlers = {
 	joinLobby: joinLobbyAction,
 	lobbyInfo: lobbyInfoAction,
 	leaveLobby: leaveLobbyAction,
+	kickPlayer: kickPlayerAction,
 	keepAlive: keepAliveAction,
 	startGame: startGameAction,
 	readyBlind: readyBlindAction,

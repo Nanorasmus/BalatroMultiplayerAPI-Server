@@ -9,6 +9,7 @@ export type ActionLobbyInfo = {
 	players: string
 	isStarted: boolean
 }
+export type ActionKickedFromLobby = { action: 'kickedFromLobby' }
 export type ActionStopGame = { action: 'stopGame' }
 export type ActionStartGame = {
 	action: 'startGame'
@@ -58,6 +59,7 @@ export type ActionServerToClient =
 	| ActionMessage
 	| ActionJoinedLobby
 	| ActionLobbyInfo
+	| ActionKickedFromLobby
 	| ActionStopGame
 	| ActionStartGame
 	| ActionStartBlind
@@ -89,6 +91,7 @@ export type ActionUsername = { action: 'username'; username: string; modHash: st
 export type ActionCreateLobby = { action: 'createLobby'; gameMode: GameMode }
 export type ActionJoinLobby = { action: 'joinLobby'; code: string }
 export type ActionLeaveLobby = { action: 'leaveLobby' }
+export type ActionKickPlayer = { action: 'kickPlayer'; playerId: string }
 export type ActionLobbyInfoRequest = { action: 'lobbyInfo' }
 export type ActionStopGameRequest = { action: 'stopGame' }
 export type ActionStartGameRequest = { action: 'startGame' }
@@ -126,6 +129,7 @@ export type ActionClientToServer =
 	| ActionCreateLobby
 	| ActionJoinLobby
 	| ActionLeaveLobby
+	| ActionKickPlayer
 	| ActionLobbyInfoRequest
 	| ActionStopGameRequest
 	| ActionStartGameRequest

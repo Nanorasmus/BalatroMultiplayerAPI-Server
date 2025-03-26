@@ -33,7 +33,6 @@ class Client {
 	skips = 0
 
 	enemyId: string | null = null
-	lastEnemyId: string | null = null
 	inPVPBattle = false
 	phantomKeys: string[] = []
 
@@ -70,8 +69,27 @@ class Client {
 		this.lobby = lobby
 	}
 
+	resetStats = () => {
+		this.lives = 0;
+		this.score = 0n;
+		this.handsLeft = 4;
+		this.ante = 1;
+		this.skips = 0;
+
+		this.enemyId = null;
+		this.inPVPBattle = false;
+		this.phantomKeys = [];
+	}
+
 	resetBlocker = () => {
 		this.livesBlocker = false
+	}
+
+	reset = () => {
+		this.isReady = false;
+		this.resetStats()
+		this.resetBlocker()
+		this.setLocation('loc_selecting');
 	}
 
 	loseLife = () => {
@@ -102,9 +120,6 @@ class Client {
 				const enemy = this.lobby?.getPlayer(this.enemyId);
 
 				if (enemy != null) {
-					if (enemy.inPVPBattle) {
-						enemy.sendAction({ action: "endPvP", lost: false });
-					}
 					enemy.clearEnemy();
 					this.sendEndGameJokersOfPlayer(enemy.id);
 				}
