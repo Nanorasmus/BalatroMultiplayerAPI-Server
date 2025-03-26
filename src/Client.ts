@@ -33,6 +33,7 @@ class Client {
 	skips = 0
 
 	enemyId: string | null = null
+	lastEnemyId: string | null = null
 	inPVPBattle = false
 	phantomKeys: string[] = []
 
@@ -74,7 +75,7 @@ class Client {
 	}
 
 	loseLife = () => {
-		if (!this.livesBlocker) {
+		if (!this.livesBlocker && this.lives > 0) {
 			this.lives -= 1
 			this.livesBlocker = true
 			this.sendAction({ action: "playerInfo", lives: this.lives });
@@ -93,8 +94,11 @@ class Client {
 		if (this.lives <= 0) {
 			this.sendAction({ action: "loseGame" });
 
+			this.lobby?.checkGameOver();
+
 			// Handle the abandoned nemesis
 			if (this.enemyId != null) {
+
 				const enemy = this.lobby?.getPlayer(this.enemyId);
 
 				if (enemy != null) {
@@ -102,16 +106,24 @@ class Client {
 						enemy.sendAction({ action: "endPvP", lost: false });
 					}
 					enemy.clearEnemy();
+					this.sendEndGameJokersOfPlayer(enemy.id);
 				}
 			}
 	
-			this.lobby?.checkGameOver();
 			this.lobby?.checkAllReady();
 		}
 	}
 
 	setSkips = (skips: number) => {
 		this.skips = skips
+	}
+
+	sendEndGameJokersOfPlayer = (player_id: string) => {
+		const killer = this.lobby?.getPlayer(player_id);
+		killer?.sendAction({
+			action: "getEndGameJokers",
+			recieverId: this.id
+		})
 	}
 
 	removePhantomsFromEnemy = () => {

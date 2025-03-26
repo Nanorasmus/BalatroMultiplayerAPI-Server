@@ -74,7 +74,7 @@ class Lobby {
 	}
 
 	getAllPlayersReady(): boolean {
-		return this.players.every((player) => player.lives == 0 || player.isReady);
+		return this.players.every((player) => player.lives <= 0 || player.isReady);
 	}
 
 	checkAllReady = () => {
@@ -122,7 +122,7 @@ class Lobby {
 		} else {
 			if (this.isStarted) {
 				// End game if less than 2 players are left
-				if (this.players.length < 2) {
+				if (this.players.filter((player) => player.lives > 0).length < 2) {
 					this.broadcastAction({ action: "stopGame" });
 					this.resetPlayers();
 				}
@@ -313,6 +313,9 @@ class Lobby {
 
 		if (winner) {
 			winner.sendAction({ action: "winGame" });
+			if (winner.enemyId) {
+				winner.sendEndGameJokersOfPlayer(winner.enemyId);
+			}
 
 			this.isStarted = false;
 			this.broadcastLobbyInfo();

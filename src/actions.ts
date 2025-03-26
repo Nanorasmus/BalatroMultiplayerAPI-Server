@@ -49,7 +49,7 @@ export type ActionSoldJoker = { action: 'soldJoker' }
 export type ActionSpentLastShop = { action: 'spentLastShop', playerId: string, amount: number }
 export type ActionMagnet = { action: 'magnet' }
 export type ActionMagnetResponse = { action: 'magnetResponse', key: string }
-export type ActionGetEndGameJokersRequest = { action: 'getEndGameJokers' }
+export type ActionGetEndGameJokersRequest = { action: 'getEndGameJokers', recieverId: string }
 export type ActionReceiveEndGameJokersRequest = { action: 'receiveEndGameJokers', keys: string }
 export type ActionStartAnteTimer = { action: 'startAnteTimer', time: number }
 export type ActionServerToClient =
@@ -118,8 +118,7 @@ export type ActionSoldJokerRequest = { action: 'soldJoker' }
 export type ActionSpentLastShopRequest = { action: 'spentLastShop', amount: number }
 export type ActionMagnetRequest = { action: 'magnet' }
 export type ActionMagnetResponseRequest = { action: 'magnetResponse', key: string }
-export type ActionGetEndGameJokersResponse = { action: 'getEndGameJokers' }
-export type ActionReceiveEndGameJokersResponse = { action: 'receiveEndGameJokers', keys: string }
+export type ActionReceiveEndGameJokersResponse = { action: 'receiveEndGameJokers', recieverId: string, keys: string }
 export type ActionStartAnteTimerRequest = { action: 'startAnteTimer', time: number }
 export type ActionFailTimer = { action: 'failTimer' }
 export type ActionClientToServer =
@@ -152,7 +151,6 @@ export type ActionClientToServer =
 	| ActionSpentLastShopRequest
 	| ActionMagnetRequest
 	| ActionMagnetResponseRequest
-	| ActionGetEndGameJokersResponse
 	| ActionReceiveEndGameJokersResponse
 	| ActionStartAnteTimerRequest
 	| ActionFailTimer
