@@ -151,8 +151,6 @@ class Client {
 
 	setEnemy = (enemy: Client) => {
 		if (!this.lobby) return;
-		
-		console.log(`Setting enemy of ${this.username} to ${enemy.username}!`);
 
 		// Check if new enemy is null
 		if (enemy === null) {
@@ -190,7 +188,7 @@ class Client {
 			action: "enemyInfo",
 
 			playerId: this.id,
-			enemyId: "",
+			enemyId: "None",
 			handsLeft: this.handsLeft,
 			score: this.score,
 			skips: this.skips,

@@ -61,6 +61,10 @@ const leaveLobbyAction = (client: Client) => {
 	client.lobby?.removePlayerFromGame(client);
 };
 
+const returnToLobbyAction = (client: Client) => {
+	client.lobby?.removePlayerFromGame(client, false);
+}
+
 const kickPlayerAction = (
 	{ playerId }: ActionHandlerArgs<ActionKickPlayer>,
 	client: Client
@@ -394,6 +398,7 @@ export const actionHandlers = {
 	joinLobby: joinLobbyAction,
 	lobbyInfo: lobbyInfoAction,
 	leaveLobby: leaveLobbyAction,
+	returnToLobby: returnToLobbyAction,
 	kickPlayer: kickPlayerAction,
 	keepAlive: keepAliveAction,
 	startGame: startGameAction,

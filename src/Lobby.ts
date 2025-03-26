@@ -8,6 +8,7 @@ import type {
 } from "./actions.js";
 import { processStringForNetworking } from "./utils.js";
 import { serializeObject } from "./main.js";
+import { actionHandlers } from "./actionHandlers.js";
 
 const Lobbies = new Map();
 
@@ -112,6 +113,9 @@ class Lobby {
 	}
 
 	removePlayerFromGame = (client: Client, removeFromLobby = true) => {
+		// Stop the game for the removed player
+		client.sendAction({ action: "stopGame" });
+
 		if (removeFromLobby) {
 			// Remove client from lobby
 			const clientIndex = this.players.indexOf(client);
@@ -126,14 +130,9 @@ class Lobby {
 			Lobbies.delete(this.code);
 		} else {
 			if (this.isStarted) {
-				// End game if less than 2 players are left
-				if (this.players.filter((player) => player.lives > 0).length < 2) {
-					this.broadcastAction({ action: "stopGame" });
-					this.resetPlayers();
-				}
 
 				// Handle the abandoned nemesis
-				else if (client.enemyId != null) {
+				if (client.enemyId != null) {
 					const enemy = this.getPlayer(client.enemyId);
 
 					if (enemy != null) {
@@ -143,7 +142,16 @@ class Lobby {
 						enemy.clearEnemy();
 					}
 				}
+				
 				this.checkAllReady();
+				this.checkGameOver();
+
+				// End game if no one is left or someone won due to this
+				if (this.players.filter((player) => player.lives > 0).length == 0) {
+					this.broadcastAction({ action: "stopGame" });
+					this.resetPlayers();
+					this.isStarted = false;
+				}
 			}
 
 			client.resetStats();

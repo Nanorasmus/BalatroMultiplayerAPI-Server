@@ -200,6 +200,8 @@ const server = createServer((socket) => {
 					case 'leaveLobby':
 						actionHandlers.leaveLobby(client)
 						break
+					case 'returnToLobby':
+						actionHandlers.returnToLobby(client)
 					case 'kickPlayer':
 						actionHandlers.kickPlayer(
 							actionArgs as ActionHandlerArgs<ActionKickPlayer>,

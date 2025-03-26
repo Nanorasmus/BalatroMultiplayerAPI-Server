@@ -86,11 +86,14 @@ export type ActionServerToClient =
 	| ActionGetEndGameJokersRequest
 	| ActionReceiveEndGameJokersRequest
 	| ActionStartAnteTimer
+
+
 // Client to Server
 export type ActionUsername = { action: 'username'; username: string; modHash: string }
 export type ActionCreateLobby = { action: 'createLobby'; gameMode: GameMode }
 export type ActionJoinLobby = { action: 'joinLobby'; code: string }
 export type ActionLeaveLobby = { action: 'leaveLobby' }
+export type ActionReturnToLobby = { action: 'returnToLobby' }
 export type ActionKickPlayer = { action: 'kickPlayer'; playerId: string }
 export type ActionLobbyInfoRequest = { action: 'lobbyInfo' }
 export type ActionStopGameRequest = { action: 'stopGame' }
@@ -129,6 +132,7 @@ export type ActionClientToServer =
 	| ActionCreateLobby
 	| ActionJoinLobby
 	| ActionLeaveLobby
+	| ActionReturnToLobby
 	| ActionKickPlayer
 	| ActionLobbyInfoRequest
 	| ActionStopGameRequest
