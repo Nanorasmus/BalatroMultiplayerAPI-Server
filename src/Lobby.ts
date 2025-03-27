@@ -146,6 +146,8 @@ class Lobby {
 				this.checkAllReady();
 				this.checkGameOver();
 
+				client.resetStats();
+
 				if (this.players.filter((player) => player.lives > 0).length < 2) {
 					// End game if no one is left or someone won due to this
 					this.broadcastAction({ action: "stopGame" });
@@ -153,8 +155,6 @@ class Lobby {
 					this.isStarted = false;
 				}
 			}
-
-			client.resetStats();
 
 			this.broadcastLobbyInfo();
 		}
