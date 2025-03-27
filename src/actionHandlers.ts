@@ -151,6 +151,16 @@ const playHandAction = (
 
 	client.handsLeft =
 		typeof handsLeft === "number" ? handsLeft : Number(handsLeft);
+	
+	client.lobby?.broadcastAction({
+		action: "enemyInfo",
+
+		playerId: client.id,
+		handsLeft,
+		score: client.score,
+		skips: client.skips,
+		lives: client.lives,
+	});
 
 	if (!client.inPVPBattle) return;
 	
@@ -163,15 +173,6 @@ const playHandAction = (
 		client.sendAction({ action: "endPvP", lost: false });
 	} else {
 		// Actual PVP
-		client.lobby?.broadcastAction({
-			action: "enemyInfo",
-
-			playerId: client.id,
-			handsLeft,
-			score: client.score,
-			skips: client.skips,
-			lives: client.lives,
-		});
 	
 		// This info is only sent on a boss blind, so it shouldn't
 		// affect other blinds
