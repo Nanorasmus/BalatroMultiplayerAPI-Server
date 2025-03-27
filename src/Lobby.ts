@@ -6,7 +6,7 @@ import type {
 	ActionServerToClient,
 	GameMode,
 } from "./actions.js";
-import { processStringForNetworking } from "./utils.js";
+import { preProcessStringForNetworking } from "./utils.js";
 import { serializeObject } from "./main.js";
 import { actionHandlers } from "./actionHandlers.js";
 
@@ -202,9 +202,9 @@ class Lobby {
 
 		for (const player of this.players) {
 			const playerInfo = {
-				"id": processStringForNetworking(player.id),
-				"username": processStringForNetworking(player.username),
-				"hash": processStringForNetworking(player.modHash),
+				"id": preProcessStringForNetworking(player.id),
+				"username": preProcessStringForNetworking(player.username),
+				"hash": preProcessStringForNetworking(player.modHash),
 				"isHost": this.isHost(player)
 			}
 			
