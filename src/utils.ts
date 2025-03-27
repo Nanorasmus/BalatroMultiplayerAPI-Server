@@ -18,7 +18,7 @@ export function randomIntRange(min: number, max: number): number {
 }
 
 // Turn any characters necessary for parsing into a special sequence
-export function processStringForNetworking(str: string): string {
+export function preProcessStringForNetworking(str: string): string {
 	return str			
 	.replaceAll(',', "{a}") // Needed to seperate action values
 	.replaceAll(':', "{b}") // Needed to parse action values
@@ -26,4 +26,15 @@ export function processStringForNetworking(str: string): string {
 	.replaceAll('|', "{c}") // Needed to seperate sub-list entries
 	.replaceAll('-', "{d}") // Needed to seperate sub-list entry values
 	.replaceAll('>', "{e}"); // Needed to parse sub-list entry values
+}
+
+// Turn any characters that were needed for parsing back into their original characters
+export function postProcessStringFromNetworking(str: string): string {
+	return str
+	.replaceAll("{a}", ",") // Needed to seperate action values
+	.replaceAll("{b}", ":") // Needed to parse action values
+
+	.replaceAll("{c}", "|") // Needed to seperate sub-list entries
+	.replaceAll("{d}", "-") // Needed to seperate sub-list entry values
+	.replaceAll("{e}", ">"); // Needed to parse sub-list entry values
 }

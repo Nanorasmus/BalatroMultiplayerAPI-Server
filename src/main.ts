@@ -55,10 +55,10 @@ const scientificNotationToBigInt = (value: string): bigint => {
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: Object is parsed from string
-const stringToJson = (str: string): any => {
+export const stringToJson = (str: string, entrySeperator = ',', keyValueSeperator = ':'): any => {
 	const obj: Record<string, string | number | bigint | boolean> = {}
-	for (const part of str.split(',')) {
-		const [key, value] = part.split(':')
+	for (const part of str.split(entrySeperator)) {
+		const [key, value] = part.split(keyValueSeperator)
 		if (value === 'true' || value === 'false') {
 			obj[key] = value === 'true'
 			continue
