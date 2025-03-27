@@ -68,6 +68,17 @@ class Client {
 	setLobby = (lobby: Lobby | null) => {
 		this.lobby = lobby
 	}
+	
+	sendInfoToLobby = () => {
+		this.lobby?.broadcastAction({
+			action: "enemyInfo",
+			playerId: this.id,
+			handsLeft: this.handsLeft,
+			score: this.score,
+			skips: this.skips,
+			lives: this.lives,
+		});
+	}
 
 	resetStats = () => {
 		this.lives = 0;
@@ -79,6 +90,8 @@ class Client {
 		this.enemyId = null;
 		this.inPVPBattle = false;
 		this.phantomKeys = [];
+		
+		this.sendInfoToLobby();
 	}
 
 	resetBlocker = () => {

@@ -146,8 +146,8 @@ class Lobby {
 				this.checkAllReady();
 				this.checkGameOver();
 
-				// End game if no one is left or someone won due to this
-				if (this.players.filter((player) => player.lives > 0).length == 0) {
+				if (this.players.filter((player) => player.lives > 0).length < 2) {
+					// End game if no one is left or someone won due to this
 					this.broadcastAction({ action: "stopGame" });
 					this.resetPlayers();
 					this.isStarted = false;

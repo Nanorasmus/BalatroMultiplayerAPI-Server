@@ -279,14 +279,7 @@ const newRoundAction = (client: Client) => {
 const skipAction = ({ skips }: ActionHandlerArgs<ActionSkip>, client: Client) => {
 	client.setSkips(skips)
 	if (!client.lobby) return;
-	client.lobby?.broadcastAction({
-		action: "enemyInfo",
-		playerId: client.id,
-		handsLeft: client.handsLeft,
-		score: client.score,
-		skips: client.skips,
-		lives: client.lives,
-	});
+	client.sendInfoToLobby();
 }
 
 const sendPhantomAction = ({ key }: ActionHandlerArgs<ActionSendPhantom>, client: Client) => {
