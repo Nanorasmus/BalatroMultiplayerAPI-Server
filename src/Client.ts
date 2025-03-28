@@ -125,7 +125,14 @@ class Client {
 		if (this.lives <= 0) {
 			this.sendAction({ action: "loseGame" });
 
+			const potentialWinnerId = this.lobby?.getWinner()?.id;
+
 			this.lobby?.checkGameOver();
+
+			console.log(potentialWinnerId)
+			if (potentialWinnerId) {
+				this.sendEndGameJokersOfPlayer(potentialWinnerId);
+			}
 
 			// Handle the abandoned nemesis
 			if (this.enemyId != null) {
@@ -133,8 +140,8 @@ class Client {
 				const enemy = this.lobby?.getPlayer(this.enemyId);
 
 				if (enemy != null) {
-					enemy.clearEnemy();
 					this.sendEndGameJokersOfPlayer(enemy.id);
+					enemy.clearEnemy();
 				}
 			}
 	

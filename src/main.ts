@@ -48,6 +48,7 @@ interface BigIntWithToJSON {
 };
 
 const scientificNotationToBigInt = (value: string): bigint => {
+	if (value.startsWith('e')) value = value.replace('e', '');
 	const [coefficient, exponent] = value.split('e')
 	const coefficientNum = BigInt(coefficient.replace('.', ''))
 	const exponentNum = BigInt(exponent) - BigInt(coefficient.split('.')[1]?.length || 0)
