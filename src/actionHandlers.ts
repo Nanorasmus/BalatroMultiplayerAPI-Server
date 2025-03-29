@@ -1,5 +1,6 @@
 import type Client from "./Client.js";
 import GameModes from "./GameMode.js";
+import { InsaneInt } from "./InsaneInt.js";
 import Lobby, { getEnemy } from "./Lobby.js";
 import type {
 	ActionCreateLobby,
@@ -147,7 +148,7 @@ const playHandAction = (
 		return
 	}
 
-	client.score = BigInt(String(score));
+	client.score = new InsaneInt(score);
 
 	client.handsLeft =
 		typeof handsLeft === "number" ? handsLeft : Number(handsLeft);
@@ -157,7 +158,7 @@ const playHandAction = (
 
 		playerId: client.id,
 		handsLeft,
-		score: client.score,
+		score: client.score.toString(),
 		skips: client.skips,
 		lives: client.lives,
 	});
@@ -177,16 +178,16 @@ const playHandAction = (
 		// This info is only sent on a boss blind, so it shouldn't
 		// affect other blinds
 		if (
-			(client.handsLeft === 0 && enemy.score > client.score) ||
-			(enemy.handsLeft === 0 && client.score > enemy.score) ||
+			(client.handsLeft === 0 && enemy.score.greaterThan(client.score)) ||
+			(enemy.handsLeft === 0 && client.score.greaterThan(enemy.score)) ||
 			(enemy.handsLeft === 0 && client.handsLeft === 0)
 		) {
 			const roundWinner =
-				enemy.score > client.score ? enemy : client;
+				enemy.score.greaterThan(client.score) ? enemy : client;
 			const roundLoser =
 				roundWinner.id === client.id ? enemy : client;
 	
-			if (roundWinner.score !== roundLoser.score) {
+			if (!roundWinner.score.equalTo(roundLoser.score)) {
 				roundLoser.loseLife();
 			}
 	
@@ -199,7 +200,7 @@ const playHandAction = (
 			roundLoser.clearEnemy();
 			
 			roundWinner.sendAction({ action: "endPvP", lost: false });
-			roundLoser.sendAction({ action: "endPvP", lost: roundWinner.score !== roundLoser.score });
+			roundLoser.sendAction({ action: "endPvP", lost: !roundWinner.score.equalTo(roundLoser.score) });
 			
 		}
 	}
@@ -421,3 +422,4 @@ export const actionHandlers = {
 	startAnteTimer: startAnteTimerAction,
 	failTimer: failTimerAction,
 } satisfies Partial<ActionHandlers>;
+

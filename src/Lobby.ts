@@ -9,6 +9,7 @@ import type {
 import { preProcessStringForNetworking } from "./utils.js";
 import { serializeObject } from "./main.js";
 import { actionHandlers } from "./actionHandlers.js";
+import { InsaneInt } from "./InsaneInt.js";
 
 const Lobbies = new Map();
 
@@ -87,7 +88,7 @@ class Lobby {
 				player.isReady = false;
 				
 				// Reset scores for next blind
-				player.score = 0n;
+				player.score = new InsaneInt("0");
 	
 				// Reset hands left for next blind
 				player.handsLeft = 4;

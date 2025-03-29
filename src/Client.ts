@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid'
 import type Lobby from './Lobby.js'
 import type { ActionServerToClient } from './actions.js'
 import { getEnemy } from './Lobby.js'
+import { InsaneInt } from './InsaneInt.js'
 
 type SendFn = (action: ActionServerToClient) => void
 type CloseConnFn = () => void
@@ -27,7 +28,7 @@ class Client {
 	isReady = false
 	firstReady = false
 	lives = 0
-	score = 0n
+	score: InsaneInt = new InsaneInt("0");
 	handsLeft = 4
 	ante = 1
 	skips = 0
@@ -74,7 +75,7 @@ class Client {
 			action: "enemyInfo",
 			playerId: this.id,
 			handsLeft: this.handsLeft,
-			score: this.score,
+			score: this.score.toString(),
 			skips: this.skips,
 			lives: this.lives,
 		});
@@ -82,7 +83,7 @@ class Client {
 
 	resetStats = () => {
 		this.lives = 0;
-		this.score = 0n;
+		this.score = new InsaneInt("0");
 		this.handsLeft = 4;
 		this.ante = 1;
 		this.skips = 0;
@@ -116,7 +117,7 @@ class Client {
 
 				playerId: this.id,
 				handsLeft: this.handsLeft,
-				score: this.score,
+				score: this.score.toString(),
 				skips: this.skips,
 				lives: this.lives,
 			});
@@ -191,7 +192,7 @@ class Client {
 			playerId: this.id,
 			enemyId: this.enemyId,
 			handsLeft: this.handsLeft,
-			score: this.score,
+			score: this.score.toString(),
 			skips: this.skips,
 			lives: this.lives,
 		});
@@ -210,7 +211,7 @@ class Client {
 			playerId: this.id,
 			enemyId: "None",
 			handsLeft: this.handsLeft,
-			score: this.score,
+			score: this.score.toString(),
 			skips: this.skips,
 			lives: this.lives,
 		});

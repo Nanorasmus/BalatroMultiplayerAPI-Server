@@ -27,6 +27,7 @@ import type {
 	ActionUtility,
 	ActionVersion,
 } from './actions.js'
+import { InsaneInt } from './InsaneInt.js'
 
 const PORT = 8788
 
@@ -47,17 +48,9 @@ interface BigIntWithToJSON {
 	return this.toString();
 };
 
-const scientificNotationToBigInt = (value: string): bigint => {
-	if (value.startsWith('e')) value = value.replace('e', '');
-	const [coefficient, exponent] = value.split('e')
-	const coefficientNum = BigInt(coefficient.replace('.', ''))
-	const exponentNum = BigInt(exponent) - BigInt(coefficient.split('.')[1]?.length || 0)
-	return coefficientNum * 10n ** exponentNum
-}
-
 // biome-ignore lint/suspicious/noExplicitAny: Object is parsed from string
 export const stringToJson = (str: string, entrySeperator = ',', keyValueSeperator = ':'): any => {
-	const obj: Record<string, string | number | bigint | boolean> = {}
+	const obj: Record<string, string | number | InsaneInt | boolean> = {}
 	for (const part of str.split(entrySeperator)) {
 		const [key, value] = part.split(keyValueSeperator)
 		if (value === 'true' || value === 'false') {
@@ -67,11 +60,7 @@ export const stringToJson = (str: string, entrySeperator = ',', keyValueSeperato
 		const numericValue = Number(value)
 		let score = null
 		if (key === 'score') {
-			if (value.includes('e')) {
-				score = scientificNotationToBigInt(value)
-			} else {
-				score = BigInt(value)
-			}
+			score = new InsaneInt(value)
 		}
 		obj[key] = score === null ? (Number.isNaN(numericValue) ? value : numericValue) : score
 	}
