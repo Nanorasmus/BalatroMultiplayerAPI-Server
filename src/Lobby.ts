@@ -65,6 +65,10 @@ class Lobby {
 		return Lobbies.get(code);
 	};
 
+	getPlayerCount = () => this.players.length;
+
+	isJoinable = () => this.getPlayerCount() < 16 && !this.isStarted;
+
 	getPlayer = (id: string): Client | null => {
 		const player = this.players.find((player) => player.id === id);
 		return player == undefined ? null : player;
@@ -168,7 +172,7 @@ class Lobby {
 		}
 
 		// Error if game is ongoing or lobby is full
-		if (this.players.length >= 16 || this.isStarted) {
+		if (!this.isJoinable()) {
 			client.sendAction({
 				action: "error",
 				message: "Lobby is full, has already started, or does not exist.",

@@ -272,7 +272,7 @@ const versionAction = (
 				action: "error",
 				message: `How the heck are you using a newer version than the server?!`,
 			});
-			}
+		}
 	}
 };
 
