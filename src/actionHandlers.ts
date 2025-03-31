@@ -244,17 +244,16 @@ const setAnteAction = (
 	client.ante = ante;
 };
 
-// TODO: Fix this
-const serverVersion = "0.2.0-MULTIPLAYER";
+const serverVersion = "1.0.3";
 /** Verifies the client version and allows connection if it matches the server's */
 const versionAction = (
 	{ version }: ActionHandlerArgs<ActionVersion>,
 	client: Client,
 ) => {
-	const versionMatch = version.match(/^(\d+\.\d+\.\d+)/);
+	const versionMatch = version.match(/(\d+\.\d+\.\d+)/);
 	if (versionMatch) {
-		const clientVersion = versionMatch[1];
-		const serverVersionNumber = serverVersion.split('-')[0];
+		const clientVersion = versionMatch[0];
+		const serverVersionNumber = serverVersion.split('~')[0];
 
 		const [clientMajor, clientMinor, clientPatch] = clientVersion.split('.').map(Number);
 		const [serverMajor, serverMinor, serverPatch] = serverVersionNumber.split('.').map(Number);
@@ -264,9 +263,16 @@ const versionAction = (
 			(clientMajor === serverMajor && clientMinor === serverMinor && clientPatch < serverPatch)) {
 			client.sendAction({
 				action: "error",
-				message: `[WARN] Server expecting version ${serverVersion}`
+				message: `Server expecting version ${serverVersion}. Please update your mod!`,
 			});
-		}
+		} else if (clientMajor > serverMajor ||
+			(clientMajor === serverMajor && clientMinor > serverMinor) ||
+			(clientMajor === serverMajor && clientMinor === serverMinor && clientPatch > serverPatch)) {
+			client.sendAction({
+				action: "error",
+				message: `How the heck are you using a newer version than the server?!`,
+			});
+			}
 	}
 };
 
