@@ -85,6 +85,67 @@ class Lobby {
 		return this.players.every((player) => player.lives <= 0 || player.isReady);
 	}
 
+	recalculateScoreToBeat() {
+		if (this.options["nano_br_mode"] == "potluck") {
+			this.players.forEach((player) => {
+				let score_to_beat = new InsaneInt(0, 0, 0);
+				let hands = 0;
+
+				this.players.forEach((otherPlayer) => {
+					if (player.id != otherPlayer.id) {
+						score_to_beat = score_to_beat.add(otherPlayer.score);
+						hands += player.handsLeft
+					}
+				});
+
+				score_to_beat = score_to_beat.div(new InsaneInt(0, this.players.filter((player) => player.lives > 0).length - 1, 0));
+
+				if (score_to_beat.lessThan(new InsaneInt(0, 500, 0))) score_to_beat = new InsaneInt(0, 500, 0);
+
+				try {
+					score_to_beat = score_to_beat.div(new InsaneInt(0, 1, 0).div(InsaneInt.fromString(this.options["nano_br_potluck_score_multiplier"])));
+				} catch (e) {
+					console.log("Failed to add multiplier");
+				}
+
+				player.score_to_beat = score_to_beat;
+				player.sendAction({
+					action: "enemyInfo",
+					playerId: "house",
+					score: score_to_beat.toString(),
+					handsLeft: hands,
+					skips: 0,
+					lives: 0
+				})
+			})
+		}
+	}
+
+	getAllPlayersDonePotLuck(): boolean {
+		return this.players.every((player) => {
+			if (player.lives <= 0 || !player.inPVPBattle) return true;
+
+			return player.handsLeft <= 0 || !player.score.lessThan(player.score_to_beat);
+		});
+	}
+
+	checkPotLuckDone = () => {
+		if (this.getAllPlayersDonePotLuck()) {
+			this.players.forEach((player) => {
+				if (player.score.lessThan(player.score_to_beat)) {
+					player.loseLife();
+				}
+				player.sendAction({ action: "endPvP", lost: player.score.lessThan(player.score_to_beat) });
+				player.firstReady = false;
+				player.inPVPBattle = false;
+				player.score_to_beat = new InsaneInt(0, 0, 0);
+				player.clearEnemy();
+			});
+		}
+	}
+
+
+
 	checkAllReady = () => {
 		if (this.getAllPlayersReady()) {
 			this.players.forEach((player) => {
@@ -92,7 +153,7 @@ class Lobby {
 				player.isReady = false;
 				
 				// Reset scores for next blind
-				player.score = new InsaneInt("0");
+				player.score = new InsaneInt(0, 0, 0);
 	
 				// Reset hands left for next blind
 				player.handsLeft = 4;
@@ -102,6 +163,9 @@ class Lobby {
 				// Start the blind
 				player.inPVPBattle = true;
 			})
+			if (this.options["nano_br_mode"] == 'potluck') {
+				this.recalculateScoreToBeat();
+			}
 		}
 	}
 
@@ -135,7 +199,6 @@ class Lobby {
 			Lobbies.delete(this.code);
 		} else {
 			if (this.isStarted) {
-
 				// Handle the abandoned nemesis
 				if (client.enemyId != null) {
 					const enemy = this.getPlayer(client.enemyId);
@@ -149,6 +212,10 @@ class Lobby {
 				}
 				
 				this.checkAllReady();
+				this.recalculateScoreToBeat();
+				if (this.options["nano_br_mode"] == 'potluck') {
+					this.checkPotLuckDone();
+				}
 				this.checkGameOver();
 
 				client.resetStats();

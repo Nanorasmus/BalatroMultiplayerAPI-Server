@@ -117,6 +117,17 @@ const startGameAction = (client: Client) => {
 	// Set the game as started
 	lobby.isStarted = true;
 	lobby.broadcastLobbyInfo();
+
+	if (lobby.options["nano_br_mode"] != "nemesis") {
+		lobby.broadcastAction({
+			action: "enemyInfo",
+			playerId: "house",
+			score: "0",
+			handsLeft: 0,
+			skips: 0,
+			lives: 0
+		})
+	}
 };
 
 const readyBlindAction = (client: Client) => {
@@ -148,7 +159,7 @@ const playHandAction = (
 		return
 	}
 
-	client.score = new InsaneInt(score);
+	client.score = InsaneInt.fromString(score);
 
 	client.handsLeft =
 		typeof handsLeft === "number" ? handsLeft : Number(handsLeft);
@@ -165,7 +176,7 @@ const playHandAction = (
 
 	if (!client.inPVPBattle) return;
 	
-	if (enemy == null) {
+	if (lobby.options["nano_br_mode"] == "nemesis" && enemy == null) {
 		// Let them play 1 hand against noone
 		client.firstReady = false
 		client.inPVPBattle = false
@@ -177,31 +188,40 @@ const playHandAction = (
 	
 		// This info is only sent on a boss blind, so it shouldn't
 		// affect other blinds
-		if (
-			(client.handsLeft === 0 && enemy.score.greaterThan(client.score)) ||
-			(enemy.handsLeft === 0 && client.score.greaterThan(enemy.score)) ||
-			(enemy.handsLeft === 0 && client.handsLeft === 0)
-		) {
-			const roundWinner =
-				enemy.score.greaterThan(client.score) ? enemy : client;
-			const roundLoser =
-				roundWinner.id === client.id ? enemy : client;
+		if (!lobby.options["nano_br_mode"] || lobby.options["nano_br_mode"] == "nemesis") {
+			// Nemesis
+			if (
+				enemy != null && (
+				(client.handsLeft === 0 && enemy.score.greaterThan(client.score)) ||
+				(enemy.handsLeft === 0 && client.score.greaterThan(enemy.score)) ||
+				(enemy.handsLeft === 0 && client.handsLeft === 0))
+			) {
+				const roundWinner =
+					enemy.score.greaterThan(client.score) ? enemy : client;
+				const roundLoser =
+					roundWinner.id === client.id ? enemy : client;
+		
+				if (!roundWinner.score.equalTo(roundLoser.score)) {
+					roundLoser.loseLife();
+				}
+		
+				roundWinner.firstReady = false;
+				roundWinner.inPVPBattle = false;
+				roundWinner.clearEnemy();
 	
-			if (!roundWinner.score.equalTo(roundLoser.score)) {
-				roundLoser.loseLife();
+				roundLoser.firstReady = false;
+				roundLoser.inPVPBattle = false;
+				roundLoser.clearEnemy();
+				
+				roundWinner.sendAction({ action: "endPvP", lost: false });
+				roundLoser.sendAction({ action: "endPvP", lost: !roundWinner.score.equalTo(roundLoser.score) });
+				
 			}
-	
-			roundWinner.firstReady = false;
-			roundWinner.inPVPBattle = false;
-			roundWinner.clearEnemy();
-
-			roundLoser.firstReady = false;
-			roundLoser.inPVPBattle = false;
-			roundLoser.clearEnemy();
-			
-			roundWinner.sendAction({ action: "endPvP", lost: false });
-			roundLoser.sendAction({ action: "endPvP", lost: !roundWinner.score.equalTo(roundLoser.score) });
-			
+		} else if (lobby.options["nano_br_mode"] == "potluck") {
+			// Potluck
+			console.log("Played a hand in potluck")
+			lobby.recalculateScoreToBeat()
+			lobby.checkPotLuckDone()
 		}
 	}
 	
@@ -244,7 +264,7 @@ const setAnteAction = (
 	client.ante = ante;
 };
 
-const serverVersion = "1.0.3";
+const serverVersion = "1.0.4";
 /** Verifies the client version and allows connection if it matches the server's */
 const versionAction = (
 	{ version }: ActionHandlerArgs<ActionVersion>,

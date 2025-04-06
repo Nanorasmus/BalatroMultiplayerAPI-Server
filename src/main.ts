@@ -60,7 +60,7 @@ export const stringToJson = (str: string, entrySeperator = ',', keyValueSeperato
 		const numericValue = Number(value)
 		let score = null
 		if (key === 'score') {
-			score = new InsaneInt(value)
+			score = InsaneInt.fromString(value)
 		}
 		obj[key] = score === null ? (Number.isNaN(numericValue) ? value : numericValue) : score
 	}

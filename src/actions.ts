@@ -190,3 +190,4 @@ export type ActionHandlerArgs<T extends HandledActions> = Omit<T, 'action'>
 
 // Other types
 export type GameMode = 'attrition' | 'showdown'
+export type BRMode = 'nemesis' | 'potluck'

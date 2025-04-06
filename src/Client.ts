@@ -28,13 +28,14 @@ class Client {
 	isReady = false
 	firstReady = false
 	lives = 0
-	score: InsaneInt = new InsaneInt("0");
+	score: InsaneInt = new InsaneInt(0, 0, 0);
 	handsLeft = 4
 	ante = 1
 	skips = 0
 
 	enemyId: string | null = null
 	inPVPBattle = false
+	score_to_beat: InsaneInt = new InsaneInt(0, 0, 0);
 	phantomKeys: string[] = []
 
 	livesBlocker = false
@@ -83,13 +84,14 @@ class Client {
 
 	resetStats = () => {
 		this.lives = 0;
-		this.score = new InsaneInt("0");
+		this.score = InsaneInt.fromString("0");
 		this.handsLeft = 4;
 		this.ante = 1;
 		this.skips = 0;
 
 		this.enemyId = null;
 		this.inPVPBattle = false;
+		this.score_to_beat = new InsaneInt(0, 0, 0);
 		this.phantomKeys = [];
 		
 		this.sendInfoToLobby();
