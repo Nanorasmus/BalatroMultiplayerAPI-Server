@@ -126,7 +126,8 @@ class Lobby {
 
 	getAllPlayersDonePotLuck(): boolean {
 		return this.players.every((player) => {
-			if (player.lives <= 0 || !player.inPVPBattle) return true;
+			if (player.lives <= 0) return true;
+			if (!player.inPVPBattle) return false;
 
 			return player.handsLeft <= 0 || !player.score.lessThan(player.score_to_beat);
 		});
@@ -135,6 +136,8 @@ class Lobby {
 	checkPotLuckDone = () => {
 		if (this.getAllPlayersDonePotLuck()) {
 			this.players.forEach((player) => {
+				if (player.lives <= 0) return;
+				
 				if (player.score.lessThan(player.score_to_beat)) {
 					player.loseLife();
 				}
