@@ -103,7 +103,7 @@ class Lobby {
 				if (score_to_beat.lessThan(new InsaneInt(0, 500, 0))) score_to_beat = new InsaneInt(0, 500, 0);
 
 				try {
-					score_to_beat = score_to_beat.div(new InsaneInt(0, 1, 0).div(InsaneInt.fromString(this.options["nano_br_potluck_score_multiplier"])));
+					score_to_beat = score_to_beat.div(new InsaneInt(0, 1, 0).div(new InsaneInt(0, this.options["nano_br_potluck_score_multiplier"], 0)));
 				} catch (e) {
 					console.log("Failed to add multiplier");
 				}
