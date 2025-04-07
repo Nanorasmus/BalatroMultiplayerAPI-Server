@@ -37,6 +37,7 @@ export const getEnemy = (client: Client): [Lobby | null, Client | null] => {
 class Lobby {
 	code: string;
 	players: Client[];
+	playerLimit: number = 16;
 	gameMode: GameMode;
 	isStarted = false;
 	// biome-ignore lint/suspicious/noExplicitAny: 
@@ -51,7 +52,9 @@ class Lobby {
 
 		this.players = [host];
 		this.gameMode = gameMode;
-		this.options = {};
+		this.options = {
+			"nano_battle_royale": true,
+		};
 
 		host.setLobby(this);
 		host.sendAction({
@@ -67,7 +70,7 @@ class Lobby {
 
 	getPlayerCount = () => this.players.length;
 
-	isJoinable = () => this.getPlayerCount() < 16 && !this.isStarted;
+	isJoinable = () => this.getPlayerCount() < this.playerLimit && !this.isStarted;
 
 	getPlayer = (id: string): Client | null => {
 		const player = this.players.find((player) => player.id === id);
@@ -336,6 +339,9 @@ class Lobby {
 	};
 
 	setOptions = (options: { [key: string]: string }) => {
+		// Get old BR mode
+		let wasBREnabled: boolean = this.options["nano_battle_royale"];
+
 		for (const key of Object.keys(options)) {
 			if (options[key] === "true" || options[key] === "false") {
 				this.options[key] = options[key] === "true";
@@ -343,6 +349,28 @@ class Lobby {
 				this.options[key] = options[key];
 			}
 		}
+
+		if (wasBREnabled != this.options["nano_battle_royale"]) {
+			if (this.options["nano_battle_royale"]) {
+				// Battle royale enabled
+				this.playerLimit = 16;
+			} else {
+				// Battle royale disabled
+				this.playerLimit = 2;
+
+				// Kick overflow players
+				this.players.forEach((player, idx) => {
+					if (this.playerLimit <= idx + 1) {
+						player.sendAction({
+							action: "kickedFromLobby"
+						})
+						this.removePlayerFromGame(player);
+						player.sendAction({ action: "error", message: "You have been removed from the lobby due to player limit changing." });
+					}
+				});
+			}
+		}
+
 		this.players.forEach(player => {
 			if (this.players.indexOf(player) > 0) {
 				player?.sendAction({ action: "lobbyOptions", gamemode: this.gameMode, ...options });
