@@ -100,7 +100,7 @@ class Lobby {
 
 				score_to_beat = score_to_beat.div(new InsaneInt(0, this.players.filter((player) => player.lives > 0).length - 1, 0));
 
-				if (score_to_beat.lessThan(new InsaneInt(0, 500, 0))) score_to_beat = new InsaneInt(0, 500, 0);
+				if (score_to_beat.lessThan(new InsaneInt(0, 100, 0))) score_to_beat = new InsaneInt(0, 100, 0);
 
 				try {
 					score_to_beat = score_to_beat.div(new InsaneInt(0, 1, 0).div(new InsaneInt(0, this.options["nano_br_potluck_score_multiplier"], 0)));
