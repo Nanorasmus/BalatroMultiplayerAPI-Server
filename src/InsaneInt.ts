@@ -191,6 +191,11 @@ export class InsaneInt {
         this.balance();
         other.balance();
 
+        if (other.coefficient === 0) {
+            console.log("ERROR: Tried dividing by 0, returning 0");
+            return new InsaneInt(0, 0, 0);
+        };
+
         console.log("Dividing " + this.toString() + " by " + other.toString());
 
         let startingECount = this.startingECount;
