@@ -36,6 +36,7 @@ export type ActionEnemyInfo = {
 	skips: number
 	lives: number
 }
+export type ActionSetPlayerTeam = { action: 'setPlayerTeam'; playerId: string; teamId: string }
 export type ActionEndPvP = { action: 'endPvP'; lost: boolean }
 export type ActionLobbyOptions = { action: 'lobbyOptions', gamemode: string }
 export type ActionRequestVersion = { action: 'version' }
@@ -53,6 +54,11 @@ export type ActionMagnetResponse = { action: 'magnetResponse', key: string }
 export type ActionGetEndGameJokersRequest = { action: 'getEndGameJokers', recieverId: string }
 export type ActionReceiveEndGameJokersRequest = { action: 'receiveEndGameJokers', keys: string }
 export type ActionStartAnteTimer = { action: 'startAnteTimer', time: number }
+export type ActionSetScore = { action: 'setScore', score: string }
+export type ActionGiveMoney = { action: 'giveMoney', amount: number }
+export type ActionSkipBlind = { action: 'skipBlind' }
+export type ActionEndBlind = { action: 'endBlind' }
+
 export type ActionServerToClient =
 	| ActionConnected
 	| ActionError
@@ -68,6 +74,7 @@ export type ActionServerToClient =
 	| ActionGameInfo
 	| ActionPlayerInfo
 	| ActionEnemyInfo
+	| ActionSetPlayerTeam
 	| ActionEndPvP
 	| ActionLobbyOptions
 	| ActionRequestVersion
@@ -86,6 +93,10 @@ export type ActionServerToClient =
 	| ActionGetEndGameJokersRequest
 	| ActionReceiveEndGameJokersRequest
 	| ActionStartAnteTimer
+	| ActionSetScore
+	| ActionGiveMoney
+	| ActionSkipBlind
+	| ActionEndBlind
 
 
 // Client to Server
@@ -95,14 +106,17 @@ export type ActionJoinLobby = { action: 'joinLobby'; code: string }
 export type ActionLeaveLobby = { action: 'leaveLobby' }
 export type ActionReturnToLobby = { action: 'returnToLobby' }
 export type ActionKickPlayer = { action: 'kickPlayer'; playerId: string }
+export type ActionSendMoneyToPlayer = { action: 'sendMoneyToPlayer'; playerId: string; amount: number }
 export type ActionLobbyInfoRequest = { action: 'lobbyInfo' }
 export type ActionStopGameRequest = { action: 'stopGame' }
 export type ActionStartGameRequest = { action: 'startGame' }
-export type ActionReadyBlind = { action: 'readyBlind' }
+export type ActionSetTeamRequest = { action: 'setTeam'; teamId: string }
+export type ActionReadyBlind = { action: 'readyBlind', isPVP: string }
 export type ActionUnreadyBlind = { action: 'unreadyBlind' }
 export type ActionPlayHand = {
 	action: 'playHand'
 	score: string
+	scoreDelta: string
 	handsLeft: number
 	hasSpeedrun: boolean
 }
@@ -134,9 +148,11 @@ export type ActionClientToServer =
 	| ActionLeaveLobby
 	| ActionReturnToLobby
 	| ActionKickPlayer
+	| ActionSendMoneyToPlayer
 	| ActionLobbyInfoRequest
 	| ActionStopGameRequest
 	| ActionStartGameRequest
+	| ActionSetTeamRequest
 	| ActionReadyBlind
 	| ActionPlayHand
 	| ActionGameInfoRequest

@@ -4,6 +4,7 @@ import type Lobby from './Lobby.js'
 import type { ActionServerToClient } from './actions.js'
 import { getEnemy } from './Lobby.js'
 import { InsaneInt } from './InsaneInt.js'
+import Team from './Team.js'
 
 type SendFn = (action: ActionServerToClient) => void
 type CloseConnFn = () => void
@@ -26,6 +27,7 @@ class Client {
 	lobby: Lobby | null = null
 	/** Whether player is ready for next blind */
 	isReady = false
+	isReadyPVP = false
 	firstReady = false
 	lives = 0
 	score: InsaneInt = new InsaneInt(0, 0, 0);
@@ -34,6 +36,7 @@ class Client {
 	skips = 0
 
 	enemyId: string | null = null
+	team: Team | null = null
 	inPVPBattle = false
 	score_to_beat: InsaneInt = new InsaneInt(0, 0, 0);
 	phantomKeys: string[] = []
@@ -103,6 +106,7 @@ class Client {
 
 	reset = () => {
 		this.isReady = false;
+		this.isReadyPVP = false
 		this.resetStats()
 		this.resetBlocker()
 		this.setLocation('loc_selecting');
@@ -170,6 +174,10 @@ class Client {
 		const enemy = this.lobby.getPlayer(this.enemyId);
 
 		this.phantomKeys.forEach((key) => enemy?.sendAction({ action: "removePhantom", key }));	
+	}
+
+	setTeam = (team: Team) => {
+		team.addPlayer(this);
 	}
 
 	setEnemy = (enemy: Client) => {

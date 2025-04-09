@@ -12,12 +12,15 @@ import type {
 	ActionMagnet,
 	ActionMagnetResponse,
 	ActionPlayHand,
+	ActionReadyBlind,
 	ActionReceiveEndGameJokersRequest,
 	ActionReceiveEndGameJokersResponse,
 	ActionRemovePhantom,
+	ActionSendMoneyToPlayer,
 	ActionSendPhantom,
 	ActionSetAnte,
 	ActionSetLocation,
+	ActionSetTeamRequest,
 	ActionSkip,
 	ActionSpentLastShop,
 	ActionSpentLastShopRequest,
@@ -66,6 +69,18 @@ const returnToLobbyAction = (client: Client) => {
 	client.lobby?.removePlayerFromGame(client, false);
 }
 
+const sendMoneyToPlayerAction = (
+	{ playerId, amount }: ActionHandlerArgs<ActionSendMoneyToPlayer>,
+	client: Client
+) => {
+	console.log("Sending " + amount + " to player " + playerId);
+	if (!client.lobby) return;
+	const player = client.lobby.getPlayer(playerId);
+	console.log("Sending " + amount + " to player " + (player == null ? "null" : player.username));
+	if (!player) return;
+	player.sendAction({ action: "giveMoney", amount });
+}
+
 const kickPlayerAction = (
 	{ playerId }: ActionHandlerArgs<ActionKickPlayer>,
 	client: Client
@@ -93,9 +108,16 @@ const keepAliveAction = (client: Client) => {
 const startGameAction = (client: Client) => {
 	const lobby = client.lobby;
 	// Only allow the host to start the game
-	if (!lobby || !lobby.isHost(client)) {
+	if (!lobby || !lobby.isHost(client) || lobby.isStarted) {
 		return;
 	}
+
+	if (lobby.options["nano_br_mode"] == "hivemind" && lobby.teams.length < 2) {
+		console.log(lobby.teams.length + " teams" + lobby.teams.toString());
+		client.sendAction({ action: "error", message: "Only one team has any players" });
+		return;
+	}
+
 	console.log("Starting game...");
 
 	const lives = lobby.options.starting_lives
@@ -112,11 +134,19 @@ const startGameAction = (client: Client) => {
 	lobby.setPlayersLives(lives);
 
 	// Roll for who is whose nemesis
-	lobby.rerollEnemies();
+	if (lobby.options["nano_br_mode"] == "hivemind") {
+		lobby.rerollTeamEnemies();
+	} else {
+		lobby.rerollEnemies();
+	}
 	
 	// Set the game as started
 	lobby.isStarted = true;
 	lobby.broadcastLobbyInfo();
+
+	lobby.players.forEach((player) => {
+		player.isReady = false;
+	});
 
 	if (lobby.options["nano_br_mode"] != "nemesis") {
 		lobby.broadcastAction({
@@ -130,12 +160,28 @@ const startGameAction = (client: Client) => {
 	}
 };
 
-const readyBlindAction = (client: Client) => {
-	client.isReady = true
+const setTeamAction = (
+	{ teamId }: ActionHandlerArgs<ActionSetTeamRequest>,
+	client: Client,
+) => {
+	client.lobby?.setPlayerTeam(client, teamId);
+};
+
+const readyBlindAction = (
+	{ isPVP }: ActionHandlerArgs<ActionReadyBlind>,
+	client: Client
+) => {
+	console.log("Player " + client.id + " is ready, isPVP is string: " + (typeof isPVP === "string") + " isPVP is: " + isPVP);
+	if (!client.lobby || !client.lobby.isStarted) return
+	if (isPVP == undefined || isPVP == "true" || isPVP.toString() == "true") {
+		client.isReadyPVP = true
+	} else {
+		client.isReady = true
+	}
 
 	const [lobby, enemy] = getEnemy(client)
 
-	if (!client.firstReady && !enemy?.isReady && !enemy?.firstReady) {
+	if (!client.firstReady && !enemy?.isReadyPVP && !enemy?.firstReady) {
 		client.firstReady = true
 		client.sendAction({ action: "speedrun" })
 	}
@@ -146,10 +192,11 @@ const readyBlindAction = (client: Client) => {
 
 const unreadyBlindAction = (client: Client) => {
 	client.isReady = false;
+	client.isReadyPVP = false;
 };
 
 const playHandAction = (
-	{ handsLeft, score }: ActionHandlerArgs<ActionPlayHand>,
+	{ handsLeft, score, scoreDelta }: ActionHandlerArgs<ActionPlayHand>,
 	client: Client,
 ) => {
 	const [lobby, enemy] = getEnemy(client)
@@ -174,7 +221,12 @@ const playHandAction = (
 		lives: client.lives,
 	});
 
-	if (!client.inPVPBattle) return;
+	if (!client.inPVPBattle) {
+		if (lobby.options["nano_br_mode"] == "hivemind") {
+			client.team?.addScore(InsaneInt.fromString((typeof scoreDelta === "string" && scoreDelta.indexOf("e") != -1) ? scoreDelta : `${scoreDelta}e0`));
+		}
+		return;
+	}
 	
 	if (lobby.options["nano_br_mode"] == "nemesis" && enemy == null) {
 		// Let them play 1 hand against noone
@@ -222,6 +274,12 @@ const playHandAction = (
 			console.log("Played a hand in potluck")
 			lobby.recalculateScoreToBeat()
 			lobby.checkPotLuckDone()
+		} else if (lobby.options["nano_br_mode"] == "hivemind") {
+			// Hivemind
+			if (lobby.options["nano_br_mode"] == "hivemind") {
+				client.team?.addScore(InsaneInt.fromString((typeof scoreDelta === "string" && scoreDelta.indexOf("e") != -1) ? scoreDelta : `${scoreDelta}e0`));
+			}
+			lobby.checkHivemindDone()
 		}
 	}
 	
@@ -308,6 +366,10 @@ const skipAction = ({ skips }: ActionHandlerArgs<ActionSkip>, client: Client) =>
 	client.setSkips(skips)
 	if (!client.lobby) return;
 	client.sendInfoToLobby();
+
+	if (client.lobby.options["nano_br_mode"] == "hivemind" && client.team) {
+		client.team.skipBlind(client.id);
+	}
 }
 
 const sendPhantomAction = ({ key }: ActionHandlerArgs<ActionSendPhantom>, client: Client) => {
@@ -420,9 +482,11 @@ export const actionHandlers = {
 	lobbyInfo: lobbyInfoAction,
 	leaveLobby: leaveLobbyAction,
 	returnToLobby: returnToLobbyAction,
+	sendMoneyToPlayer: sendMoneyToPlayerAction,
 	kickPlayer: kickPlayerAction,
 	keepAlive: keepAliveAction,
 	startGame: startGameAction,
+	setTeam: setTeamAction,
 	readyBlind: readyBlindAction,
 	unreadyBlind: unreadyBlindAction,
 	playHand: playHandAction,

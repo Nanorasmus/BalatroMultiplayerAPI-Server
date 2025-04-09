@@ -10,6 +10,7 @@ import { preProcessStringForNetworking } from "./utils.js";
 import { serializeObject } from "./main.js";
 import { actionHandlers } from "./actionHandlers.js";
 import { InsaneInt } from "./InsaneInt.js";
+import Team from "./Team.js";
 
 const Lobbies = new Map();
 
@@ -38,6 +39,7 @@ class Lobby {
 	code: string;
 	players: Client[];
 	playerLimit: number = 16;
+	teams: Team[];
 	gameMode: GameMode;
 	isStarted = false;
 	// biome-ignore lint/suspicious/noExplicitAny: 
@@ -62,6 +64,10 @@ class Lobby {
 			code: this.code,
 			type: this.gameMode,
 		});
+
+		// Initialize teams
+		this.teams = [new Team("RED", this)];
+		this.teams[0].addPlayer(host);
 	}
 
 	static get = (code: string) => {
@@ -82,10 +88,10 @@ class Lobby {
 		return client.id === this.players[0].id;
 	}
 
-	getAllPlayersReady(): boolean {
+	getAllPlayersReadyPVP(): boolean {
 		if (!this.isStarted) return false;
 		
-		return this.players.every((player) => player.lives <= 0 || player.isReady);
+		return this.players.every((player) => player.lives <= 0 || player.isReadyPVP);
 	}
 
 	recalculateScoreToBeat() {
@@ -137,7 +143,7 @@ class Lobby {
 		if (this.getAllPlayersDonePotLuck()) {
 			this.players.forEach((player) => {
 				if (player.lives <= 0) return;
-				
+
 				if (player.score.lessThan(player.score_to_beat)) {
 					player.loseLife();
 				}
@@ -150,13 +156,38 @@ class Lobby {
 		}
 	}
 
+	checkHivemindDone = () => {
+		if (this.teams.every((team) => team.getAllDoneWithPVP())) {
+			this.teams.forEach((team) => {
+				if (team.lives <= 0) return;
+
+				team.inPVPBlind = false;
+				let lost = team.score.lessThan(team.enemyTeam?.score ?? new InsaneInt(0, 0, 0));
+
+				team.players.forEach((player) => {
+					player.sendAction({ action: "endPvP", lost: lost });
+
+					player.isReady = false;
+					player.isReadyPVP = false;
+					player.firstReady = false;
+					player.inPVPBattle = false;
+				});
+				
+				if (lost) team.loseLife();
+			});
+
+			this.rerollEnemies();
+		}
+	}
+
 
 
 	checkAllReady = () => {
-		if (this.getAllPlayersReady()) {
+		if (this.getAllPlayersReadyPVP()) {
 			this.players.forEach((player) => {
 				// Reset ready status for next blind
 				player.isReady = false;
+				player.isReadyPVP = false;
 				
 				// Reset scores for next blind
 				player.score = new InsaneInt(0, 0, 0);
@@ -164,6 +195,7 @@ class Lobby {
 				// Reset hands left for next blind
 				player.handsLeft = 4;
 	
+				console.log("Starting blind for all!");
 				player.sendAction({ action: "startBlind" });
 	
 				// Start the blind
@@ -172,6 +204,12 @@ class Lobby {
 			if (this.options["nano_br_mode"] == 'potluck') {
 				this.recalculateScoreToBeat();
 			}
+			if (this.options["nano_br_mode"] == "hivemind") {
+				this.teams.forEach((team) => team.inPVPBlind = true);
+			}
+		}
+		if (this.options["nano_br_mode"] == "hivemind") {
+			this.teams.forEach((team) => team.checkAllReady());
 		}
 	}
 
@@ -187,11 +225,28 @@ class Lobby {
 		return potentialWinner;
 	}
 
+	// Returns winning team, or null if game is not over yet
+	getWinningTeam(): Team | null {
+		if (this.teams.length === 0) return null;
+		if (this.teams.length === 1) return this.teams[0];
+		let potentialWinner: Team | null = null;
+		for (const team of this.teams) {
+			if (team.lives > 0 && team.players.length > 0) {
+				if (potentialWinner) return null;
+				potentialWinner = team;
+			}
+		}
+		return potentialWinner;
+	}
+
 	removePlayerFromGame = (client: Client, removeFromLobby = true) => {
 		// Stop the game for the removed player
 		client.sendAction({ action: "stopGame" });
 
 		if (removeFromLobby) {
+			// Remove client from team
+			client.team?.removePlayer(client);
+
 			// Remove client from lobby
 			const clientIndex = this.players.indexOf(client);
 			if (clientIndex !== -1) {
@@ -221,6 +276,8 @@ class Lobby {
 				this.recalculateScoreToBeat();
 				if (this.options["nano_br_mode"] == 'potluck') {
 					this.checkPotLuckDone();
+				} else if (this.options["nano_br_mode"] == 'hivemind') {
+					this.checkHivemindDone();
 				}
 				this.checkGameOver();
 
@@ -261,7 +318,15 @@ class Lobby {
 			type: this.gameMode,
 		});
 		client.sendAction({ action: "lobbyOptions", gamemode: this.gameMode, ...this.options });
+		this.setPlayerTeam(client, "RED");
 		this.broadcastLobbyInfo();
+
+		// Tell new client what team everyone is on
+		this.players.forEach(player => {
+			if (player.team) {
+				client.sendAction({ action: "setPlayerTeam", playerId: player.id, teamId: player.team.id });
+			}
+		});
 	};
 
 	broadcastAction = (action: ActionServerToClient) => {
@@ -344,6 +409,7 @@ class Lobby {
 	setOptions = (options: { [key: string]: string }) => {
 		// Get old BR mode
 		let wasBREnabled: boolean = this.options["nano_battle_royale"];
+		let lastBRMode: string = this.options["nano_br_mode"];
 
 		for (const key of Object.keys(options)) {
 			if (options[key] === "true" || options[key] === "false") {
@@ -373,13 +439,17 @@ class Lobby {
 				});
 			}
 		}
+		
+		this.broadcastLobbyOptions(this.players[0].id);
+	};
 
+	broadcastLobbyOptions = (excludePlayer: string) => {
 		this.players.forEach(player => {
-			if (this.players.indexOf(player) > 0) {
-				player?.sendAction({ action: "lobbyOptions", gamemode: this.gameMode, ...options });
+			if (player.id != excludePlayer) {
+				player?.sendAction({ action: "lobbyOptions", gamemode: this.gameMode, ...this.options });
 			}
 		})
-	};
+	}
 
 	resetPlayers = () => {
 		this.players.forEach(player => {
@@ -387,17 +457,73 @@ class Lobby {
 		})
 	}
 
+	setPlayerTeam = (client: Client, teamId: string) => {
+		for (const team of this.teams) {
+			if (team.id == teamId) {
+				team.addPlayer(client);
+
+				// DEBUG, REMEMBER TO REMOVE
+				this.teams.forEach(team => {
+					console.log(`Team ${team.id}:\n${team.players.map(player => "- " + player.username).join(",\n")}`);
+				});
+				this.players.forEach(player => {
+					console.log(`${player.username} is on team ${player.team?.id}`);
+				})
+				return;
+			}
+		}
+
+		// If team was not found
+		let team: Team = new Team(teamId, this);
+		this.teams.push(team);
+		team.addPlayer(client);
+
+		// DEBUG, REMEMBER TO REMOVE
+		this.teams.forEach(team => {
+			console.log(`Team ${team.id}:\n${team.players.map(player => "- " + player.username).join(",\n")}`);
+		});
+	};
+
+	removeTeam = (team: Team) => {
+		this.teams.splice(this.teams.indexOf(team), 1);
+	};
+
 	checkRerollEnemies = () => {
 		console.log("Checking reroll:\n" + this.players.map(player => `${player.username} (${player.enemyId})`).join(",\n"));
+
+		
 
 		// Return if game is not started, less than 2 players remaining, or if someone still has a nemesis
 		if (
 			!this.isStarted
+			|| this.options["nano_br_mode"] == "hivemind"
 			|| this.players.length < 2
 			|| !this.players.every(player => player.lives <= 0 || player.enemyId == null)
 		) return;
 
 		this.rerollEnemies();
+	}
+
+	rerollTeamEnemies = () => {
+		console.log("Rerolling team enemies");
+
+		let teamsLeft: Team[] = Array.from(this.teams)
+		
+		// Remove any invalid picks
+		teamsLeft = teamsLeft.filter(team => {
+			return team.lives > 0 && team.players.length > 0;
+		});
+
+		while (teamsLeft.length >= 2) {
+			const team1 = teamsLeft.splice(randomInt(teamsLeft.length), 1)[0];
+			const team2 = teamsLeft.splice(randomInt(teamsLeft.length), 1)[0];
+			team1.setEnemyTeam(team2);
+			team2.setEnemyTeam(team1);
+		}
+
+		if (teamsLeft.length === 1) {
+			teamsLeft[0].clearEnemyTeam();
+		}
 	}
 
 	rerollEnemies = () => {
@@ -425,6 +551,25 @@ class Lobby {
 	}
 
 	checkGameOver = () => {
+		// Special team-based logic
+		if (this.options["nano_br_mode"] == "hivemind") {
+			const winner = this.getWinningTeam();
+
+			if (winner) {
+				winner.players.forEach(player => {
+					player.sendAction({ action: "winGame" });
+
+					winner.enemyTeam?.players.forEach(enemy => {
+						player.sendEndGameJokersOfPlayer(enemy.id);
+					})
+				});
+				this.resetPlayers();
+				this.isStarted = false;
+				this.broadcastLobbyInfo();
+			}
+			return
+		};
+
 		const winner = this.getWinner();
 
 		if (winner) {

@@ -13,13 +13,16 @@ import type {
 	ActionMagnet,
 	ActionMagnetResponse,
 	ActionPlayHand,
+	ActionReadyBlind,
 	ActionReceiveEndGameJokersRequest,
 	ActionReceiveEndGameJokersResponse,
 	ActionRemovePhantom,
+	ActionSendMoneyToPlayer,
 	ActionSendPhantom,
 	ActionServerToClient,
 	ActionSetAnte,
 	ActionSetLocation,
+	ActionSetTeamRequest,
 	ActionSkip,
 	ActionSpentLastShop,
 	ActionStartAnteTimer,
@@ -192,17 +195,33 @@ const server = createServer((socket) => {
 						break
 					case 'returnToLobby':
 						actionHandlers.returnToLobby(client)
+						break;
 					case 'kickPlayer':
 						actionHandlers.kickPlayer(
 							actionArgs as ActionHandlerArgs<ActionKickPlayer>,
 							client,
 						)
 						break
+					case 'sendMoneyToPlayer':
+						actionHandlers.sendMoneyToPlayer(
+							actionArgs as ActionHandlerArgs<ActionSendMoneyToPlayer>,
+							client,
+						)
+						break
 					case 'startGame':
 						actionHandlers.startGame(client)
 						break
+					case 'setTeam':
+						actionHandlers.setTeam(
+							actionArgs as ActionHandlerArgs<ActionSetTeamRequest>,
+							client,
+						)
+						break
 					case 'readyBlind':
-						actionHandlers.readyBlind(client)
+						actionHandlers.readyBlind(
+							actionArgs as ActionHandlerArgs<ActionReadyBlind>,
+							client,
+						)
 						break
 					case 'unreadyBlind':
 						actionHandlers.unreadyBlind(client)

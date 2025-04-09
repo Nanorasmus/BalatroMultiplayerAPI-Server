@@ -14,7 +14,7 @@ export class InsaneInt {
             return new InsaneInt(val.startingECount, val.coefficient, val.exponent);
         }
 
-        
+        console.log("Converting " + val + " to InsaneInt");
         let startingECount: number;
         let coefficient: number;
         let exponent: number;
