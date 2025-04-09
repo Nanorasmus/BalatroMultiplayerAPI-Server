@@ -39,6 +39,8 @@ export type ActionEnemyInfo = {
 export type ActionSetPlayerTeam = { action: 'setPlayerTeam'; playerId: string; teamId: string }
 export type ActionEndPvP = { action: 'endPvP'; lost: boolean }
 export type ActionLobbyOptions = { action: 'lobbyOptions', gamemode: string }
+export type ActionSetDeckType = { action: 'setDeckType'; back: string, sleeve: string, stake: string }
+export type ActionSetDeck = { action: 'setDeck'; deck: string }
 export type ActionRequestVersion = { action: 'version' }
 export type ActionEnemyLocation = { action: 'enemyLocation'; playerId: string; location: string }
 export type ActionSendPhantom = { action: 'sendPhantom', key: string }
@@ -77,6 +79,8 @@ export type ActionServerToClient =
 	| ActionSetPlayerTeam
 	| ActionEndPvP
 	| ActionLobbyOptions
+	| ActionSetDeckType
+	| ActionSetDeck
 	| ActionRequestVersion
 	| ActionUtility
 	| ActionEnemyLocation
@@ -123,6 +127,13 @@ export type ActionPlayHand = {
 export type ActionGameInfoRequest = { action: 'gameInfo' }
 export type ActionPlayerInfoRequest = { action: 'playerInfo' }
 export type ActionEnemyInfoRequest = { action: 'enemyInfo' }
+export type ActionSendDeckType = { action: 'sendDeckType'; back: string, sleeve: string, stake: string }
+export type ActionSendDeck = { action: 'sendDeck'; deck: string }
+export type ActionSetCardSuit = { action: 'setCardSuit'; card: string; suit: string }
+export type ActionSetCardRank = { action: 'setCardRank'; card: string; rank: string }
+export type ActionSetCardEnhancement = { action: 'setCardEnhancement'; card: string; enhancement: string }
+export type ActionSetCardEdition = { action: 'setCardEdition'; card: string; edition: string }
+export type ActionSetCardSeal = { action: 'setCardSeal'; card: string; seal: string }
 export type ActionFailRound = { action: 'failRound' }
 export type ActionSetAnte = {
 	action: 'setAnte'
@@ -160,6 +171,13 @@ export type ActionClientToServer =
 	| ActionEnemyInfoRequest
 	| ActionUnreadyBlind
 	| ActionLobbyOptions
+	| ActionSendDeckType
+	| ActionSendDeck
+	| ActionSetCardSuit
+	| ActionSetCardRank
+	| ActionSetCardEnhancement
+	| ActionSetCardEdition
+	| ActionSetCardSeal
 	| ActionFailRound
 	| ActionSetAnte
 	| ActionVersion

@@ -1,4 +1,5 @@
 import Client from "./Client.js"
+import Deck from "./Deck/Deck.js"
 import { InsaneInt } from "./InsaneInt.js"
 import Lobby from "./Lobby.js"
 
@@ -7,6 +8,8 @@ class Team {
     public lobby: Lobby
 
     public players: Client[] = []
+    public deck: Deck | null = null
+
     public score: InsaneInt = new InsaneInt(0, 0, 0)
     public lives: number = 4
     public skips: number = 0
@@ -41,6 +44,28 @@ class Team {
         if (this.players.length === 0) {
             this.lobby.removeTeam(this);
         }
+    }
+
+    setDeckType(back: string, sleeve: string, stake: string) {
+        this.players.forEach(player => {
+            player.sendAction({ action: "setDeckType", back, sleeve, stake });
+        });
+    }
+
+    setDeck(deckStr: string) {
+        if (this.deck != null) return;
+
+        this.deck = new Deck(this, deckStr);
+
+        this.broadcastDeck()
+    }
+
+    broadcastDeck() {
+        if (this.deck == null) return;
+
+        this.players.forEach(player => {
+            player.sendAction({ action: "setDeck", deck: this.deck!.toString() });
+        })
     }
 
     setEnemyTeam(team: Team) {
@@ -80,6 +105,7 @@ class Team {
     resetStats() {
         this.lives = 4;
         this.skips = 0;
+        this.deck = null;
     }
 
 	skipBlind = (excludePlayerId?: string) => {
@@ -127,6 +153,9 @@ class Team {
         if (this.lobby.isStarted && this.lives > 0 && this.players.every(player => player.isReady)) {
             // Reset team score
             this.resetScore();
+            
+            // Give everyone an updated deck
+            this.deck?.applyPendingActions();
 
             this.players.forEach(player => {
                 player.isReady = false;

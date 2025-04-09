@@ -1,7 +1,7 @@
-import type Client from "./Client.js";
+import type Client from "./objects/Client.js";
 import GameModes from "./GameMode.js";
-import { InsaneInt } from "./InsaneInt.js";
-import Lobby, { getEnemy } from "./Lobby.js";
+import { InsaneInt } from "./objects/InsaneInt.js";
+import Lobby, { getEnemy } from "./objects/Lobby.js";
 import type {
 	ActionCreateLobby,
 	ActionEatPizza,
@@ -16,9 +16,16 @@ import type {
 	ActionReceiveEndGameJokersRequest,
 	ActionReceiveEndGameJokersResponse,
 	ActionRemovePhantom,
+	ActionSendDeck,
+	ActionSendDeckType,
 	ActionSendMoneyToPlayer,
 	ActionSendPhantom,
 	ActionSetAnte,
+	ActionSetCardEdition,
+	ActionSetCardEnhancement,
+	ActionSetCardRank,
+	ActionSetCardSeal,
+	ActionSetCardSuit,
 	ActionSetLocation,
 	ActionSetTeamRequest,
 	ActionSkip,
@@ -305,6 +312,63 @@ const lobbyOptionsAction = (
 	client.lobby?.setOptions(options);
 };
 
+const sendDeckTypeAction = (
+	{ back, sleeve, stake }: ActionHandlerArgs<ActionSendDeckType>,
+	client: Client,
+) => {
+	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team) {
+		return;
+	}
+
+	client.team.setDeckType(back, sleeve, stake);
+}
+
+const sendDeckAction = (
+	{ deck }: ActionHandlerArgs<ActionSendDeck>,
+	client: Client,
+) => {
+	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team) {
+		return;
+	}
+
+	client.team.setDeck(deck);
+}
+
+const setCardSuitAction = (
+	{ card, suit }: ActionHandlerArgs<ActionSetCardSuit>,
+	client: Client,
+) => (
+	client.team?.deck?.setSuit(card, suit)
+)
+
+const setCardRankAction = (
+	{ card, rank }: ActionHandlerArgs<ActionSetCardRank>,
+	client: Client,
+) => (
+	client.team?.deck?.setRank(card, rank)
+)
+
+const setCardEnhancementAction = (
+	{ card, enhancement }: ActionHandlerArgs<ActionSetCardEnhancement>,
+	client: Client,
+) => (
+	client.team?.deck?.setEnhancement(card, enhancement)
+)
+
+const setCardEditionAction = (
+	{ card, edition }: ActionHandlerArgs<ActionSetCardEdition>,
+	client: Client,
+) => (
+	client.team?.deck?.setEdition(card, edition)
+)
+
+const setCardSealAction = (
+	{ card, seal }: ActionHandlerArgs<ActionSetCardSeal>,
+	client: Client,
+) => (
+	client.team?.deck?.setSeal(card, seal)
+)
+
 const failRoundAction = (client: Client) => {
 	const lobby = client.lobby;
 
@@ -493,6 +557,13 @@ export const actionHandlers = {
 	stopGame: stopGameAction,
 	gameInfo: gameInfoAction,
 	lobbyOptions: lobbyOptionsAction,
+	sendDeckType: sendDeckTypeAction,
+	sendDeck: sendDeckAction,
+	setCardSuit: setCardSuitAction,
+	setCardRank: setCardRankAction,
+	setCardEnhancement: setCardEnhancementAction,
+	setCardEdition: setCardEditionAction,
+	setCardSeal: setCardSealAction,
 	failRound: failRoundAction,
 	setAnte: setAnteAction,
 	version: versionAction,

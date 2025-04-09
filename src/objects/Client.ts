@@ -1,7 +1,7 @@
 import { type AddressInfo } from 'node:net'
 import { v4 as uuidv4 } from 'uuid'
 import type Lobby from './Lobby.js'
-import type { ActionServerToClient } from './actions.js'
+import type { ActionServerToClient } from '../actions.js'
 import { getEnemy } from './Lobby.js'
 import { InsaneInt } from './InsaneInt.js'
 import Team from './Team.js'

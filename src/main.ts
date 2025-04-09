@@ -1,5 +1,5 @@
 import { Socket, createServer } from 'node:net'
-import Client from './Client.js'
+import Client from './objects/Client.js'
 import { actionHandlers } from './actionHandlers.js'
 import type {
 	Action,
@@ -17,10 +17,17 @@ import type {
 	ActionReceiveEndGameJokersRequest,
 	ActionReceiveEndGameJokersResponse,
 	ActionRemovePhantom,
+	ActionSendDeck,
+	ActionSendDeckType,
 	ActionSendMoneyToPlayer,
 	ActionSendPhantom,
 	ActionServerToClient,
 	ActionSetAnte,
+	ActionSetCardEdition,
+	ActionSetCardEnhancement,
+	ActionSetCardRank,
+	ActionSetCardSeal,
+	ActionSetCardSuit,
 	ActionSetLocation,
 	ActionSetTeamRequest,
 	ActionSkip,
@@ -30,7 +37,7 @@ import type {
 	ActionUtility,
 	ActionVersion,
 } from './actions.js'
-import { InsaneInt } from './InsaneInt.js'
+import { InsaneInt } from './objects/InsaneInt.js'
 
 const PORT = 8788
 
@@ -246,6 +253,48 @@ const server = createServer((socket) => {
 						actionHandlers.lobbyOptions(
 							actionArgs as ActionHandlerArgs<ActionLobbyOptions>,
 							client,
+						)
+						break
+					case "sendDeckType":
+						actionHandlers.sendDeckType(
+							actionArgs as ActionHandlerArgs<ActionSendDeckType>,
+							client
+						)
+						break
+					case "sendDeck":
+						actionHandlers.sendDeck(
+							actionArgs as ActionHandlerArgs<ActionSendDeck>,
+							client
+						)
+						break
+					case "setCardSuit":
+						actionHandlers.setCardSuit(
+							actionArgs as ActionHandlerArgs<ActionSetCardSuit>,
+							client
+						)
+						break
+					case 'setCardRank':
+						actionHandlers.setCardRank(
+							actionArgs as ActionHandlerArgs<ActionSetCardRank>,
+							client
+						)
+						break
+					case 'setCardEnhancement':
+						actionHandlers.setCardEnhancement(
+							actionArgs as ActionHandlerArgs<ActionSetCardEnhancement>,
+							client
+						)
+						break
+					case 'setCardEdition':
+						actionHandlers.setCardEdition(
+							actionArgs as ActionHandlerArgs<ActionSetCardEdition>,
+							client
+						)
+						break
+					case 'setCardSeal':
+						actionHandlers.setCardSeal(
+							actionArgs as ActionHandlerArgs<ActionSetCardSeal>,
+							client
 						)
 						break
 					case 'newRound':

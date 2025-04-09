@@ -1,14 +1,14 @@
 import { randomInt } from "crypto";
 import type Client from "./Client.js";
-import GameModes from "./GameMode.js";
+import GameModes from "../GameMode.js";
 import type {
 	ActionLobbyInfo,
 	ActionServerToClient,
 	GameMode,
-} from "./actions.js";
-import { preProcessStringForNetworking } from "./utils.js";
-import { serializeObject } from "./main.js";
-import { actionHandlers } from "./actionHandlers.js";
+} from "../actions.js";
+import { preProcessStringForNetworking } from "../utils.js";
+import { serializeObject } from "../main.js";
+import { actionHandlers } from "../actionHandlers.js";
 import { InsaneInt } from "./InsaneInt.js";
 import Team from "./Team.js";
 
@@ -184,6 +184,11 @@ class Lobby {
 
 	checkAllReady = () => {
 		if (this.getAllPlayersReadyPVP()) {
+            // Give everyone an updated deck if in hivemind
+			if (this.options["nano_br_mode"] == "hivemind") {
+				this.teams.forEach((team) => team.deck?.applyPendingActions());
+			}
+
 			this.players.forEach((player) => {
 				// Reset ready status for next blind
 				player.isReady = false;
