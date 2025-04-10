@@ -3,6 +3,8 @@ import GameModes from "./GameMode.js";
 import { InsaneInt } from "./objects/InsaneInt.js";
 import Lobby, { getEnemy } from "./objects/Lobby.js";
 import type {
+	ActionAddCard,
+	ActionChangeHandLevel,
 	ActionCreateLobby,
 	ActionEatPizza,
 	ActionHandlerArgs,
@@ -15,6 +17,7 @@ import type {
 	ActionReadyBlind,
 	ActionReceiveEndGameJokersRequest,
 	ActionReceiveEndGameJokersResponse,
+	ActionRemoveCard,
 	ActionRemovePhantom,
 	ActionSendDeck,
 	ActionSendDeckType,
@@ -337,37 +340,90 @@ const sendDeckAction = (
 const setCardSuitAction = (
 	{ card, suit }: ActionHandlerArgs<ActionSetCardSuit>,
 	client: Client,
-) => (
+) => {
+	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team) {
+		return;
+	}
+	
 	client.team?.deck?.setSuit(card, suit)
-)
+}
 
 const setCardRankAction = (
 	{ card, rank }: ActionHandlerArgs<ActionSetCardRank>,
 	client: Client,
-) => (
+) => {
+	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team) {
+		return;
+	}
+	
 	client.team?.deck?.setRank(card, rank)
-)
+}
 
 const setCardEnhancementAction = (
 	{ card, enhancement }: ActionHandlerArgs<ActionSetCardEnhancement>,
 	client: Client,
-) => (
+) => {
+	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team) {
+		return;
+	}
+	
 	client.team?.deck?.setEnhancement(card, enhancement)
-)
+}
 
 const setCardEditionAction = (
 	{ card, edition }: ActionHandlerArgs<ActionSetCardEdition>,
 	client: Client,
-) => (
+) => {
+	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team) {
+		return;
+	}
+	
 	client.team?.deck?.setEdition(card, edition)
-)
+}
 
 const setCardSealAction = (
 	{ card, seal }: ActionHandlerArgs<ActionSetCardSeal>,
 	client: Client,
-) => (
+) => {
+	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team) {
+		return;
+	}
+	
 	client.team?.deck?.setSeal(card, seal)
-)
+}
+
+const addCardAction = (
+	{ card }: ActionHandlerArgs<ActionAddCard>,
+	client: Client,
+) => {
+	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team) {
+		return;
+	}
+	
+	client.team?.deck?.addCard(card)
+}
+
+const removeCardAction = (
+	{ card }: ActionHandlerArgs<ActionRemoveCard>,
+	client: Client,
+) => {
+	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team) {
+		return;
+	}
+	
+	client.team?.deck?.removeCard(card)	
+}
+
+const changeHandLevelAction = (
+	{ hand, amount }: ActionHandlerArgs<ActionChangeHandLevel>,
+	client: Client,
+) => {
+	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team) {
+		return;
+	}
+	
+	client.team.changeHandLevel(hand, amount)
+}
 
 const failRoundAction = (client: Client) => {
 	const lobby = client.lobby;
@@ -564,6 +620,9 @@ export const actionHandlers = {
 	setCardEnhancement: setCardEnhancementAction,
 	setCardEdition: setCardEditionAction,
 	setCardSeal: setCardSealAction,
+	addCard: addCardAction,
+	removeCard: removeCardAction,
+	changeHandLevel: changeHandLevelAction,
 	failRound: failRoundAction,
 	setAnte: setAnteAction,
 	version: versionAction,

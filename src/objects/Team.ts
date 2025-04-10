@@ -9,6 +9,7 @@ class Team {
 
     public players: Client[] = []
     public deck: Deck | null = null
+    public handLevels: { [key: string]: number } = {}
 
     public score: InsaneInt = new InsaneInt(0, 0, 0)
     public lives: number = 4
@@ -60,24 +61,32 @@ class Team {
         this.broadcastDeck()
     }
 
-    broadcastDeck() {
-        if (this.deck == null) return;
-
-        this.players.forEach(player => {
-            player.sendAction({ action: "setDeck", deck: this.deck!.toString() });
-        })
-    }
-
     setEnemyTeam(team: Team) {
         if (this.enemyTeam) {
             this.enemyTeam.enemyTeam = null;
         }
         this.enemyTeam = team;
+
+        if (this.enemyTeam) {
+            this.enemyTeam.broadcastStatsToEnemies();
+        }
     }
 
     clearEnemyTeam() {
         if (this.enemyTeam) this.enemyTeam.enemyTeam = null;
         this.enemyTeam = null;
+
+        
+        this.players.forEach(player => {
+            player.sendAction({
+                action: 'enemyInfo',
+                playerId: "house",
+                score: new InsaneInt(0, 100, 0).toString(),
+                handsLeft: 0,
+                lives: 4,
+                skips: 0
+            });
+        });
     }
 
     addScore(score: InsaneInt) {
@@ -94,6 +103,16 @@ class Team {
                 });
             };
         }
+    }
+
+    changeHandLevel(hand: string, amount: string) {
+        if (!this.handLevels[hand]) this.handLevels[hand] = 1;
+
+        this.handLevels[hand] += parseInt(amount);
+
+        this.players.forEach(player => {
+            player.sendAction({ action: "setHandLevel", hand, level: this.handLevels[hand] });
+        })
     }
 
     resetScore() {
@@ -184,24 +203,35 @@ class Team {
         });
         return handsLeft;
     }
+    
+
+    broadcastDeck() {
+        if (this.deck == null) return;
+
+        this.players.forEach(player => {
+            player.sendAction({ action: "setDeck", deck: this.deck!.toString() });
+        })
+    }
 
     private broadcastScore() {
-        let handsLeft = 0;
         this.players.forEach(player => {
-            handsLeft += player.handsLeft;
             player.sendAction({
                 action: 'setScore',
                 score: this.score.toString()
             });
         });
+        this.broadcastStatsToEnemies()
+    }
+
+    private broadcastStatsToEnemies() {
         this.enemyTeam?.players.forEach(enemy => {
             enemy.sendAction({
                 action: 'enemyInfo',
                 playerId: "house",
                 score: (this.score.lessThan(new InsaneInt(0, 100, 0)) ? new InsaneInt(0, 100, 0) : this.score).toString(),
-                handsLeft,
+                handsLeft: this.getHandsLeft(),
                 lives: this.lives,
-                skips: 0
+                skips: this.skips
             });
         });
     }

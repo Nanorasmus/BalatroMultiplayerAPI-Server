@@ -41,6 +41,7 @@ export type ActionEndPvP = { action: 'endPvP'; lost: boolean }
 export type ActionLobbyOptions = { action: 'lobbyOptions', gamemode: string }
 export type ActionSetDeckType = { action: 'setDeckType'; back: string, sleeve: string, stake: string }
 export type ActionSetDeck = { action: 'setDeck'; deck: string }
+export type ActionSetHandLevel = { action: 'setHandLevel'; hand: string; level: number }
 export type ActionRequestVersion = { action: 'version' }
 export type ActionEnemyLocation = { action: 'enemyLocation'; playerId: string; location: string }
 export type ActionSendPhantom = { action: 'sendPhantom', key: string }
@@ -81,6 +82,7 @@ export type ActionServerToClient =
 	| ActionLobbyOptions
 	| ActionSetDeckType
 	| ActionSetDeck
+	| ActionSetHandLevel 
 	| ActionRequestVersion
 	| ActionUtility
 	| ActionEnemyLocation
@@ -134,6 +136,10 @@ export type ActionSetCardRank = { action: 'setCardRank'; card: string; rank: str
 export type ActionSetCardEnhancement = { action: 'setCardEnhancement'; card: string; enhancement: string }
 export type ActionSetCardEdition = { action: 'setCardEdition'; card: string; edition: string }
 export type ActionSetCardSeal = { action: 'setCardSeal'; card: string; seal: string }
+export type ActionAddCard = { action: 'addCard'; card: string }
+export type ActionRemoveCard = { action: 'removeCard'; card: string }
+export type ActionChangeHandLevel = { action: 'changeHandLevel'; hand: string; amount: string }
+
 export type ActionFailRound = { action: 'failRound' }
 export type ActionSetAnte = {
 	action: 'setAnte'
@@ -178,6 +184,9 @@ export type ActionClientToServer =
 	| ActionSetCardEnhancement
 	| ActionSetCardEdition
 	| ActionSetCardSeal
+	| ActionAddCard
+	| ActionRemoveCard
+	| ActionChangeHandLevel
 	| ActionFailRound
 	| ActionSetAnte
 	| ActionVersion

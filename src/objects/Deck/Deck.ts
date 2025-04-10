@@ -52,16 +52,11 @@ class Deck {
 	}
 
 	applyPendingActions() {
-		// Remove duplicates
-		let uniqueActions = this.pendingActions.filter((action, index) =>
-			this.pendingActions.findIndex(otherAction => action.equals(otherAction)) == index
-		);
-
 		// Sort them after priority
-		uniqueActions.sort((a, b) => a.shouldPrioritizeOver(b));
+		this.pendingActions.sort((a, b) => a.shouldPrioritizeOver(b));
 
 		// Apply changes
-		uniqueActions.forEach(action => {
+		this.pendingActions.forEach(action => {
 			// Check if the card still exists despite previous actions (Assuming it is not an add card action)
 			let cardIndex: number = 0;
 			if (action.type != DeckActionType.ADD_CARD) {
@@ -96,7 +91,7 @@ class Deck {
 							this.cards[cardIndex].enhancement = action.value;
 							break;
 						case CardKey.EDITION:
-							this.cards[cardIndex].edition = action.value;
+							this.cards[cardIndex].edition = action.value.startsWith("e_") ? action.value.substring(2) : action.value;
 							break;
 						case CardKey.SEAL:
 							this.cards[cardIndex].seal = action.value;
@@ -105,6 +100,8 @@ class Deck {
 					break;
 			}
 		});
+
+		this.pendingActions = [];
 
 		this.team.broadcastDeck();
 	}

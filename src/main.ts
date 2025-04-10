@@ -3,6 +3,8 @@ import Client from './objects/Client.js'
 import { actionHandlers } from './actionHandlers.js'
 import type {
 	Action,
+	ActionAddCard,
+	ActionChangeHandLevel,
 	ActionClientToServer,
 	ActionCreateLobby,
 	ActionEatPizza,
@@ -16,6 +18,7 @@ import type {
 	ActionReadyBlind,
 	ActionReceiveEndGameJokersRequest,
 	ActionReceiveEndGameJokersResponse,
+	ActionRemoveCard,
 	ActionRemovePhantom,
 	ActionSendDeck,
 	ActionSendDeckType,
@@ -294,6 +297,24 @@ const server = createServer((socket) => {
 					case 'setCardSeal':
 						actionHandlers.setCardSeal(
 							actionArgs as ActionHandlerArgs<ActionSetCardSeal>,
+							client
+						)
+						break
+					case 'addCard':
+						actionHandlers.addCard(
+							actionArgs as ActionHandlerArgs<ActionAddCard>,
+							client
+						)
+						break
+					case 'removeCard':
+						actionHandlers.removeCard(
+							actionArgs as ActionHandlerArgs<ActionRemoveCard>,
+							client
+						)
+						break
+					case 'changeHandLevel':
+						actionHandlers.changeHandLevel(
+							actionArgs as ActionHandlerArgs<ActionChangeHandLevel>,
 							client
 						)
 						break
