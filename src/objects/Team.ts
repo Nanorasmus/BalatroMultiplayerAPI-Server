@@ -18,6 +18,9 @@ class Team {
     public inPVPBlind: boolean = false
     public enemyTeam: Team | null = null
 
+    deckChunks: string[] = []
+    deckProvider: string | null = null
+
 	constructor(id: string, lobby: Lobby) {
 		this.id = id
         this.lobby = lobby
@@ -53,12 +56,11 @@ class Team {
         });
     }
 
-    setDeck(deckStr: string) {
-        if (this.deck != null) return;
+    setDeck(client: Client, deckStr: string) {
+        if (this.deckChunks.length > 0 && this.deckProvider != client.id) return;
 
-        this.deck = new Deck(this, deckStr);
-
-        this.broadcastDeck()
+        this.deckProvider = client.id;
+        this.deckChunks.push(deckStr);
     }
 
     setEnemyTeam(team: Team) {
@@ -89,7 +91,7 @@ class Team {
         });
     }
 
-    addScore(score: InsaneInt) {
+    addScore(score: InsaneInt, requiredChips: InsaneInt) {
         console.log("Adding score: " + score.toString() + " to team " + this.id + " score: " + this.score.toString());
         if (score.lessThan(new InsaneInt(0, 0, 0))) {
             this.resetScore();
@@ -102,7 +104,7 @@ class Team {
 
             this.broadcastScore();
 
-            if (!this.inPVPBlind) {
+            if (!this.inPVPBlind && ((!requiredChips.equalTo(new InsaneInt(0, 0, 0)) && !this.score.lessThan(requiredChips)) || this.getHandsLeft() <= 0)) {
                 this.players.forEach(player => {
                     player.sendAction({ action: "endBlind" });
                 });
@@ -176,9 +178,15 @@ class Team {
     }
 
     checkAllReady() {
-        if (this.lobby.isStarted && this.lives > 0 && this.players.every(player => player.isReady)) {
+        if (this.lobby.isStarted && this.lives > 0 && (this.deckChunks.length > 0 || this.deck) && this.players.every(player => player.isReady)) {
             // Reset team score
             this.resetScore();
+
+            // Init deck from chunks if necessary
+            if (!this.deck) {
+                this.deck = new Deck(this, this.deckChunks.join("|"));
+                this.deckChunks = [];
+            }
             
             // Give everyone an updated deck
             this.deck?.applyPendingActions();
@@ -227,6 +235,7 @@ class Team {
                 score: this.score.toString()
             });
         });
+        this.broadcastPlayers();
         this.broadcastStatsToEnemies()
     }
 

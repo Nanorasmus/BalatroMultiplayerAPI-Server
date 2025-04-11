@@ -12,7 +12,7 @@ class Card {
 
     constructor(deck: Deck, card_str: string) {
         do {
-            this.id = uuidv4().replaceAll("-", "");
+            this.id = uuidv4().replaceAll("-", "").substring(0, 7);
         } while (deck.getCard(this.id))
         
 

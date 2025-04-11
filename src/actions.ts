@@ -123,6 +123,7 @@ export type ActionPlayHand = {
 	action: 'playHand'
 	score: string
 	scoreDelta: string
+	blindChips: string
 	handsLeft: number
 	hasSpeedrun: boolean
 }

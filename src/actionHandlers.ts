@@ -202,7 +202,7 @@ const unreadyBlindAction = (client: Client) => {
 };
 
 const playHandAction = (
-	{ handsLeft, score, scoreDelta }: ActionHandlerArgs<ActionPlayHand>,
+	{ handsLeft, score, scoreDelta, blindChips }: ActionHandlerArgs<ActionPlayHand>,
 	client: Client,
 ) => {
 	const [lobby, enemy] = getEnemy(client)
@@ -229,7 +229,10 @@ const playHandAction = (
 
 	if (!client.inPVPBattle) {
 		if (lobby.options["nano_br_mode"] == "hivemind") {
-			client.team?.addScore(InsaneInt.fromString((typeof scoreDelta === "string" && scoreDelta.indexOf("e") != -1) ? scoreDelta : `${scoreDelta}e0`));
+			client.team?.addScore(
+				InsaneInt.fromString((typeof scoreDelta === "string" && scoreDelta.indexOf("e") != -1) ? scoreDelta : `${scoreDelta}e0`),
+				InsaneInt.fromString((typeof blindChips === "string" && blindChips.indexOf("e") != -1) ? blindChips : `${blindChips}e0`)
+			);
 		}
 		return;
 	}
@@ -283,7 +286,10 @@ const playHandAction = (
 		} else if (lobby.options["nano_br_mode"] == "hivemind") {
 			// Hivemind
 			if (lobby.options["nano_br_mode"] == "hivemind") {
-				client.team?.addScore(InsaneInt.fromString((typeof scoreDelta === "string" && scoreDelta.indexOf("e") != -1) ? scoreDelta : `${scoreDelta}e0`));
+				client.team?.addScore(
+					InsaneInt.fromString((typeof scoreDelta === "string" && scoreDelta.indexOf("e") != -1) ? scoreDelta : `${scoreDelta}e0`),
+					InsaneInt.fromString((typeof blindChips === "string" && blindChips.indexOf("e") != -1) ? blindChips : `${blindChips}e0`)
+				);
 			}
 			lobby.checkHivemindDone()
 		}
@@ -330,7 +336,7 @@ const sendDeckAction = (
 		return;
 	}
 
-	client.team.setDeck(deck);
+	client.team.setDeck(client, deck);
 }
 
 const setCardSuitAction = (
@@ -427,7 +433,11 @@ const failRoundAction = (client: Client) => {
 	if (!lobby) return;
 
 	if (lobby.options.death_on_round_loss) {
-		client.loseLife()
+		if (lobby.options["nano_br_mode"] == "hivemind") {
+			client.team?.loseLife();
+		} else {
+			client.loseLife()
+		}
 	}
 };
 
