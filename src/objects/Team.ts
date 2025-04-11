@@ -91,10 +91,15 @@ class Team {
 
     addScore(score: InsaneInt) {
         console.log("Adding score: " + score.toString() + " to team " + this.id + " score: " + this.score.toString());
-        if (!score.greaterThan(new InsaneInt(0, 0, 0))) {
+        if (score.lessThan(new InsaneInt(0, 0, 0))) {
             this.resetScore();
         } else {
             this.score = this.score.add(score);
+
+            if (this.score.lessThan(new InsaneInt(0, 0, 0))) {
+                this.resetScore();
+            }
+
             this.broadcastScore();
 
             if (!this.inPVPBlind) {
@@ -125,6 +130,8 @@ class Team {
         this.lives = 4;
         this.skips = 0;
         this.deck = null;
+        this.handLevels = {};
+        this.enemyTeam = null;
     }
 
 	skipBlind = (excludePlayerId?: string) => {

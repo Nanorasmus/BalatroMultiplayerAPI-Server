@@ -136,7 +136,6 @@ class Client {
 
 			this.lobby?.checkGameOver();
 
-			console.log(potentialWinnerId)
 			if (potentialWinnerId) {
 				this.sendEndGameJokersOfPlayer(potentialWinnerId);
 			}

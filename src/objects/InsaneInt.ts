@@ -127,12 +127,12 @@ export class InsaneInt {
             }
 
             // Balance exponent and startingECount
-            if ((this.exponent >= 100000 && this.startingECount > 0) || this.exponent >= 10000000) {
+            if ((this.exponent >= 1000000 && this.startingECount > 0) || this.exponent >= 10000000) {
                 const change = Math.floor(this.exponent).toString().length - 5;
                 this.exponent /= Math.pow(10, change);
                 this.startingECount += change;
             }
-            if (this.exponent != 0 && this.exponent < 10000 && this.startingECount != 0) {
+            if (this.exponent != 0 && this.exponent < 1000000 && this.startingECount != 0) {
                 let change = 5 - Math.floor(this.exponent).toString().length;
                 if (change >= this.startingECount) change = this.startingECount - 1;
                 this.exponent *= Math.pow(10, change);

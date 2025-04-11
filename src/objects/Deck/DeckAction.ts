@@ -10,25 +10,34 @@ const priorities: { [key: string]: number } = {
 
 export class DeckAction {
     type: DeckActionType;
-    cardCriteria: Card
+    card?: Card | string
     key?: CardKey
     value?: string
 
-    constructor(type: DeckActionType, cardCriteria: Card, key?: CardKey, value?: string) {
+    timeAdded: number
+
+    constructor(type: DeckActionType, card: Card | string, key?: CardKey, value?: string) {
         this.type = type;
-        this.cardCriteria = cardCriteria;
+        this.card = card;
         this.key = key;
         this.value = value;
+
+        this.timeAdded = Date.now();
     }
 
     equals(otherAction: DeckAction) {
-        return this.type == otherAction.type && this.cardCriteria.equals(otherAction.cardCriteria) && this.key == otherAction.key && this.value == otherAction.value;
+        let cardEquals = this.card == otherAction.card;
+        if (this.card && otherAction.card && typeof this.card != "string" && typeof otherAction.card != "string") {
+            cardEquals = this.card.equals(otherAction.card) ?? false;
+        }
+        
+        return this.type == otherAction.type && cardEquals && this.key == otherAction.key && this.value == otherAction.value;
     }
 
     shouldPrioritizeOver(otherAction: DeckAction) {
         // Remove card
         if (this.type == DeckActionType.REMOVE_CARD && otherAction.type == DeckActionType.REMOVE_CARD) {
-            return 0;
+            return otherAction.timeAdded - this.timeAdded;
         }
         if (this.type == DeckActionType.REMOVE_CARD) {
             return 1;
@@ -39,7 +48,7 @@ export class DeckAction {
 
         // Add card
         if (this.type == DeckActionType.ADD_CARD && otherAction.type == DeckActionType.ADD_CARD) {
-            return 0;
+            return otherAction.timeAdded - this.timeAdded;
         }
         if (this.type == DeckActionType.ADD_CARD) {
             return 1;
@@ -49,16 +58,20 @@ export class DeckAction {
         }
 
         // Change card
-        if (this.key == otherAction.key) {
-            return 0;
+        if (this.timeAdded == otherAction.timeAdded) {
+            if (this.key == otherAction.key) {
+                return 0;
+            }
+            if (!this.key || !otherAction.key) return 0;
+            
+            // Prioritize certain values over others
+            if (priorities[this.key!] > priorities[otherAction.key!]) {
+                return 1;
+            }
+            return -1
         }
-        if (!this.key || !otherAction.key) return 0;
-        
-        // Prioritize certain values over others
-        if (priorities[this.key!] > priorities[otherAction.key!]) {
-            return 1;
-        }
-        return -1
+
+        return otherAction.timeAdded - this.timeAdded
     }
 }
 

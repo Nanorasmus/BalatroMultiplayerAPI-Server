@@ -83,10 +83,8 @@ const sendMoneyToPlayerAction = (
 	{ playerId, amount }: ActionHandlerArgs<ActionSendMoneyToPlayer>,
 	client: Client
 ) => {
-	console.log("Sending " + amount + " to player " + playerId);
 	if (!client.lobby) return;
 	const player = client.lobby.getPlayer(playerId);
-	console.log("Sending " + amount + " to player " + (player == null ? "null" : player.username));
 	if (!player) return;
 	player.sendAction({ action: "giveMoney", amount });
 }
@@ -123,7 +121,6 @@ const startGameAction = (client: Client) => {
 	}
 
 	if (lobby.options["nano_br_mode"] == "hivemind" && lobby.teams.length < 2) {
-		console.log(lobby.teams.length + " teams" + lobby.teams.toString());
 		client.sendAction({ action: "error", message: "Only one team has any players" });
 		return;
 	}
@@ -181,7 +178,6 @@ const readyBlindAction = (
 	{ isPVP }: ActionHandlerArgs<ActionReadyBlind>,
 	client: Client
 ) => {
-	console.log("Player " + client.id + " is ready, isPVP is string: " + (typeof isPVP === "string") + " isPVP is: " + isPVP);
 	if (!client.lobby || !client.lobby.isStarted) return
 	if (isPVP == undefined || isPVP == "true" || isPVP.toString() == "true") {
 		client.isReadyPVP = true

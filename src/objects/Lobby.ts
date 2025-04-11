@@ -460,20 +460,15 @@ class Lobby {
 		this.players.forEach(player => {
 			player.reset();
 		})
+		this.teams.forEach(team => {
+			team.resetStats();
+		})
 	}
 
 	setPlayerTeam = (client: Client, teamId: string) => {
 		for (const team of this.teams) {
 			if (team.id == teamId) {
 				team.addPlayer(client);
-
-				// DEBUG, REMEMBER TO REMOVE
-				this.teams.forEach(team => {
-					console.log(`Team ${team.id}:\n${team.players.map(player => "- " + player.username).join(",\n")}`);
-				});
-				this.players.forEach(player => {
-					console.log(`${player.username} is on team ${player.team?.id}`);
-				})
 				return;
 			}
 		}
@@ -482,11 +477,6 @@ class Lobby {
 		let team: Team = new Team(teamId, this);
 		this.teams.push(team);
 		team.addPlayer(client);
-
-		// DEBUG, REMEMBER TO REMOVE
-		this.teams.forEach(team => {
-			console.log(`Team ${team.id}:\n${team.players.map(player => "- " + player.username).join(",\n")}`);
-		});
 	};
 
 	removeTeam = (team: Team) => {
