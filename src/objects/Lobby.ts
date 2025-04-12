@@ -177,7 +177,7 @@ class Lobby {
 				if (lost) team.loseLife();
 			});
 
-			this.rerollEnemies();
+			this.rerollTeamEnemies();
 		}
 	}
 

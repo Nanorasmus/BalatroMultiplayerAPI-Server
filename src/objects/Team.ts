@@ -87,6 +87,14 @@ class Team {
         if (this.enemyTeam) {
             this.enemyTeam.broadcastStatsToEnemies();
         }
+
+        this.players.forEach(player => {
+            player.sendAction({
+                action: "setPlayerTeam",
+                playerId: "house",
+                teamId: team.id
+            });
+        })
     }
 
     clearEnemyTeam() {
@@ -103,6 +111,17 @@ class Team {
                 lives: 4,
                 skips: 0
             });
+            player.sendAction({
+                action: "setPlayerTeam",
+                playerId: "house",
+                teamId: "GREY"
+            })
+        });
+    }
+
+    astroidEnemy() {
+        this.enemyTeam?.players.forEach(player => {
+            player.sendAction({ action: "asteroid" });
         });
     }
 

@@ -520,7 +520,15 @@ const removePhantomAction = ({ key }: ActionHandlerArgs<ActionRemovePhantom>, cl
 
 const asteroidAction = (client: Client) => {
 	const [lobby, enemy] = getEnemy(client)
-	if (!lobby || !enemy) return;
+	if (!lobby) return;
+
+	if (!enemy) {
+		if (lobby.options["nano_br_mode"] == "hivemind" && client.team) {
+			client.team.astroidEnemy();
+		}
+		return;
+	}
+
 	enemy.sendAction({
 		action: "asteroid"
 	});
