@@ -162,6 +162,7 @@ class Lobby {
 				if (team.lives <= 0) return;
 
 				team.inPVPBlind = false;
+				team.inBlind = false;
 				let lost = team.score.lessThan(team.enemyTeam?.score ?? new InsaneInt(0, 0, 0));
 
 				team.players.forEach((player) => {
@@ -210,7 +211,10 @@ class Lobby {
 				this.recalculateScoreToBeat();
 			}
 			if (this.options["nano_br_mode"] == "hivemind") {
-				this.teams.forEach((team) => team.inPVPBlind = true);
+				this.teams.forEach((team) => {
+					team.inBlind = true;
+					team.inPVPBlind = true;
+				});
 			}
 		}
 		if (this.options["nano_br_mode"] == "hivemind") {

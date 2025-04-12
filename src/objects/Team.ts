@@ -8,6 +8,11 @@ class Team {
     public lobby: Lobby
 
     public players: Client[] = []
+
+    public deckBack: string | null = null
+    public deckSleeve: string | null = null
+    public deckStake: string | null = null
+
     public deck: Deck | null = null
     public handLevels: { [key: string]: number } = {}
 
@@ -15,6 +20,7 @@ class Team {
     public lives: number = 4
     public skips: number = 0
 
+    public inBlind: boolean = false
     public inPVPBlind: boolean = false
     public enemyTeam: Team | null = null
 
@@ -34,6 +40,11 @@ class Team {
         client.team = this;
         this.players.push(client);
 
+        // Tell the new player the team's deck type if there is one
+        if (this.deckBack && this.deckSleeve && this.deckStake)
+            client.sendAction({ action: "setDeckType", back: this.deckBack, sleeve: this.deckSleeve, stake: this.deckStake });
+
+        // Tell everyone the player's team
         this.lobby.broadcastAction({
             action: "setPlayerTeam",
             playerId: client.id,
@@ -51,6 +62,10 @@ class Team {
     }
 
     setDeckType(back: string, sleeve: string, stake: string) {
+        this.deckBack = back;
+        this.deckSleeve = sleeve;
+        this.deckStake = stake;
+
         this.players.forEach(player => {
             player.sendAction({ action: "setDeckType", back, sleeve, stake });
         });
@@ -95,7 +110,7 @@ class Team {
         console.log("Adding score: " + score.toString() + " to team " + this.id + " score: " + this.score.toString());
         if (score.lessThan(new InsaneInt(0, 0, 0))) {
             this.resetScore();
-        } else {
+        } else if (this.inBlind) {
             this.score = this.score.add(score);
 
             if (this.score.lessThan(new InsaneInt(0, 0, 0))) {
@@ -105,9 +120,7 @@ class Team {
             this.broadcastScore();
 
             if (!this.inPVPBlind && ((!requiredChips.equalTo(new InsaneInt(0, 0, 0)) && !this.score.lessThan(requiredChips)) || this.getHandsLeft() <= 0)) {
-                this.players.forEach(player => {
-                    player.sendAction({ action: "endBlind" });
-                });
+                this.endBlind();
             };
         }
     }
@@ -150,6 +163,14 @@ class Team {
 		}
 	}
 
+    endBlind = () => {
+        this.inBlind = false;
+        this.inPVPBlind = false;
+        this.players.forEach(player => {
+            player.sendAction({ action: "endBlind" });
+        });
+    }
+
     loseLife() {
         if (this.lives <= 0) return;
 
@@ -190,6 +211,8 @@ class Team {
             
             // Give everyone an updated deck
             this.deck?.applyPendingActions();
+
+            this.inBlind = true;
 
             this.players.forEach(player => {
                 player.isReady = false;
