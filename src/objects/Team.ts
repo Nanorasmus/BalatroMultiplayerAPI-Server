@@ -218,7 +218,10 @@ class Team {
     }
 
     checkAllReady() {
-        if (this.lobby.isStarted && this.lives > 0 && (this.deckChunks.length > 0 || this.deck) && this.players.every(player => player.isReady)) {
+        // Ignore if no players are in the match
+        if (this.players.every(player => !player.inMatch)) return;
+
+        if (this.lobby.isStarted && this.lives > 0 && (this.deckChunks.length > 0 || this.deck) && this.players.every(player => player.isReady || !player.inMatch)) {
             // Reset team score
             this.resetScore();
 

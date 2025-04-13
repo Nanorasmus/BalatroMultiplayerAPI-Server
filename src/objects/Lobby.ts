@@ -91,7 +91,7 @@ class Lobby {
 	getAllPlayersReadyPVP(): boolean {
 		if (!this.isStarted) return false;
 		
-		return this.players.every((player) => player.lives <= 0 || player.isReadyPVP);
+		return this.players.every((player) => !player.inMatch || player.lives <= 0 || player.isReadyPVP);
 	}
 
 	recalculateScoreToBeat() {
@@ -251,6 +251,8 @@ class Lobby {
 	removePlayerFromGame = (client: Client, removeFromLobby = true) => {
 		// Stop the game for the removed player
 		client.sendAction({ action: "stopGame" });
+		client.inMatch = false;
+		client.inPVPBattle = false;
 
 		if (removeFromLobby) {
 			// Remove client from team
@@ -280,6 +282,8 @@ class Lobby {
 						enemy.clearEnemy();
 					}
 				}
+
+				if (client.team) {}
 				
 				this.checkAllReady();
 				this.recalculateScoreToBeat();

@@ -152,7 +152,9 @@ const startGameAction = (client: Client) => {
 	lobby.broadcastLobbyInfo();
 
 	lobby.players.forEach((player) => {
+		player.inMatch = true;
 		player.isReady = false;
+		player.isReadyPVP = false;
 	});
 
 	if (lobby.options["nano_br_mode"] != "nemesis") {

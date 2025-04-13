@@ -26,6 +26,7 @@ class Client {
 	modHash = 'NULL'
 	lobby: Lobby | null = null
 	/** Whether player is ready for next blind */
+	inMatch = false
 	isReady = false
 	isReadyPVP = false
 	firstReady = false
@@ -86,6 +87,7 @@ class Client {
 	}
 
 	resetStats = () => {
+		this.inMatch = false;
 		this.lives = 0;
 		this.score = InsaneInt.fromString("0");
 		this.handsLeft = 4;
@@ -131,6 +133,7 @@ class Client {
 
 		if (this.lives <= 0) {
 			this.sendAction({ action: "loseGame" });
+			this.inMatch = false;
 
 			const potentialWinnerId = this.lobby?.getWinner()?.id;
 
