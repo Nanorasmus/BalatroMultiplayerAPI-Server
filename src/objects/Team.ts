@@ -150,11 +150,11 @@ class Team {
 
     checkDoneWithBlind() {
         if (!this.inPVPBlind && ((!this.lastBlindRequirement.equalTo(new InsaneInt(0, 0, 0)) && !this.score.lessThan(this.lastBlindRequirement)) || this.getHandsLeft() <= 0)) {
-            this.endBlind();
-
             if (this.getHandsLeft() <= 0 && this.score.lessThan(this.lastBlindRequirement)) {
                 this.loseLife();
             }
+            
+            this.endBlind();
         };
     }
 
