@@ -143,6 +143,10 @@ class Team {
 
             if (!this.inPVPBlind && ((!requiredChips.equalTo(new InsaneInt(0, 0, 0)) && !this.score.lessThan(requiredChips)) || this.getHandsLeft() <= 0)) {
                 this.endBlind();
+
+                if (this.getHandsLeft() <= 0 && this.score.lessThan(requiredChips)) {
+                    this.loseLife();
+                }
             };
         }
     }
@@ -241,6 +245,8 @@ class Team {
             this.inBlind = true;
 
             this.players.forEach(player => {
+                if (player.lives <= 0 || !player.inMatch) return;
+
                 player.isReady = false;
                 
                 // Reset scores for next blind
@@ -273,6 +279,8 @@ class Team {
         if (this.deck == null) return;
 
         this.players.forEach(player => {
+            if (player.lives <= 1 || !player.inMatch) return;
+
             player.sendAction({ action: "setDeck", deck: this.deck!.toString() });
         })
     }

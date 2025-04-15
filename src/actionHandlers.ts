@@ -305,7 +305,7 @@ const setCardSuitAction = (
 	{ card, suit }: ActionHandlerArgs<ActionSetCardSuit>,
 	client: Client,
 ) => {
-	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team) {
+	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team || !client.inMatch) {
 		return;
 	}
 	
@@ -316,7 +316,7 @@ const setCardRankAction = (
 	{ card, rank }: ActionHandlerArgs<ActionSetCardRank>,
 	client: Client,
 ) => {
-	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team) {
+	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team || !client.inMatch) {
 		return;
 	}
 	
@@ -327,7 +327,7 @@ const setCardEnhancementAction = (
 	{ card, enhancement }: ActionHandlerArgs<ActionSetCardEnhancement>,
 	client: Client,
 ) => {
-	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team) {
+	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team || !client.inMatch) {
 		return;
 	}
 	
@@ -338,7 +338,7 @@ const setCardEditionAction = (
 	{ card, edition }: ActionHandlerArgs<ActionSetCardEdition>,
 	client: Client,
 ) => {
-	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team) {
+	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team || !client.inMatch) {
 		return;
 	}
 	
@@ -349,7 +349,7 @@ const setCardSealAction = (
 	{ card, seal }: ActionHandlerArgs<ActionSetCardSeal>,
 	client: Client,
 ) => {
-	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team) {
+	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team || !client.inMatch) {
 		return;
 	}
 	
@@ -360,7 +360,7 @@ const addCardAction = (
 	{ card }: ActionHandlerArgs<ActionAddCard>,
 	client: Client,
 ) => {
-	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team) {
+	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team || !client.inMatch) {
 		return;
 	}
 	
@@ -371,7 +371,7 @@ const removeCardAction = (
 	{ card }: ActionHandlerArgs<ActionRemoveCard>,
 	client: Client,
 ) => {
-	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team) {
+	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team || !client.inMatch) {
 		return;
 	}
 	
@@ -382,7 +382,7 @@ const changeHandLevelAction = (
 	{ hand, amount }: ActionHandlerArgs<ActionChangeHandLevel>,
 	client: Client,
 ) => {
-	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team) {
+	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team || !client.inMatch) {
 		return;
 	}
 	
