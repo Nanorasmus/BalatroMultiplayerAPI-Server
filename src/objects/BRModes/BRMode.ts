@@ -20,7 +20,7 @@ export class BRMode {
 
     public onJoinLobby(client: Client) {}
 
-    public onLeaveLobby(client: Client) {}
+    public onLeaveLobby(client: Client, leftFully: boolean) {}
 
     public startGame() {
         const lives = this.lobby.options.starting_lives
@@ -65,6 +65,8 @@ export class BRMode {
 
     public startPVPBlind() {
         this.lobby.players.forEach((player) => {
+            if (player.lives <= 0 || !player.inMatch) return;
+            
             // Reset ready status for next blind
             player.isReady = false;
             player.isReadyPVP = false;

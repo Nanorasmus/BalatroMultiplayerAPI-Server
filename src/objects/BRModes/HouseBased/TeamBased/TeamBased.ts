@@ -36,6 +36,10 @@ export class TeamBased extends HouseBased {
 		});
 	}
 
+	public override onLeaveLobby(client: Client, leftFully: boolean): void {
+		client.team?.checkDoneWithBlind();
+	}
+
     public override checkAllReady(): void {
         super.checkAllReady();
         

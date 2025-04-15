@@ -143,7 +143,7 @@ class Lobby {
 
 			this.broadcastLobbyInfo();
 
-			this.brMode.onLeaveLobby(client);
+			this.brMode.onLeaveLobby(client, removeFromLobby);
 		}
 	};
 

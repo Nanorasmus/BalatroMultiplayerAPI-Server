@@ -22,6 +22,7 @@ class Team {
     public lives: number = 4
     public skips: number = 0
 
+    public lastBlindRequirement: InsaneInt = new InsaneInt(0, 0, 0)
     public inBlind: boolean = false
     public inPVPBlind: boolean = false
     public enemyTeam: Team | null = null
@@ -139,16 +140,22 @@ class Team {
                 this.resetScore();
             }
 
+            this.lastBlindRequirement = requiredChips
+
             this.broadcastScore();
 
-            if (!this.inPVPBlind && ((!requiredChips.equalTo(new InsaneInt(0, 0, 0)) && !this.score.lessThan(requiredChips)) || this.getHandsLeft() <= 0)) {
-                this.endBlind();
-
-                if (this.getHandsLeft() <= 0 && this.score.lessThan(requiredChips)) {
-                    this.loseLife();
-                }
-            };
+            this.checkDoneWithBlind();
         }
+    }
+
+    checkDoneWithBlind() {
+        if (!this.inPVPBlind && ((!this.lastBlindRequirement.equalTo(new InsaneInt(0, 0, 0)) && !this.score.lessThan(this.lastBlindRequirement)) || this.getHandsLeft() <= 0)) {
+            this.endBlind();
+
+            if (this.getHandsLeft() <= 0 && this.score.lessThan(this.lastBlindRequirement)) {
+                this.loseLife();
+            }
+        };
     }
 
     changeHandLevel(hand: string, amount: string) {
@@ -205,6 +212,7 @@ class Team {
 
         // Set lives
         this.players.forEach(player => {
+            if (player.lives <= 0 || !player.inMatch) return;
             player.sendAction({ action: "playerInfo", lives: this.lives });
         })
 
@@ -261,7 +269,7 @@ class Team {
     }
 
     getAllDoneWithPVP() {
-        if (this.lives <= 0 || !this.enemyTeam) return true;
+        if (this.lives <= 0 || !this.enemyTeam || this.players.every(player => !player.inMatch)) return true;
         let handsLeft = this.getHandsLeft();
         return handsLeft <= 0 || (!this.score.lessThan(this.enemyTeam.score) && this.enemyTeam.getHandsLeft() <= 0);   
     }
@@ -269,6 +277,7 @@ class Team {
     getHandsLeft() {
         let handsLeft = 0;
         this.players.forEach(player => {
+            if (player.lives <= 0 || !player.inMatch) return;
             handsLeft += player.handsLeft;
         });
         return handsLeft;
@@ -287,6 +296,8 @@ class Team {
 
     private broadcastScore() {
         this.players.forEach(player => {
+            if (player.lives <= 0 || !player.inMatch) return;
+
             player.sendAction({
                 action: 'setScore',
                 score: this.score.toString()
@@ -298,6 +309,8 @@ class Team {
 
     private broadcastStatsToEnemies() {
         this.enemyTeam?.players.forEach(enemy => {
+            if (enemy.lives <= 0 || !enemy.inMatch) return;
+
             enemy.sendAction({
                 action: 'enemyInfo',
                 playerId: "house",
