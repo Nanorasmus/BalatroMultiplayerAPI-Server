@@ -410,7 +410,7 @@ const setAnteAction = (
 	client.ante = ante;
 };
 
-const serverVersion = "1.0.4";
+const serverVersion = "1.0.5";
 /** Verifies the client version and allows connection if it matches the server's */
 const versionAction = (
 	{ version }: ActionHandlerArgs<ActionVersion>,
