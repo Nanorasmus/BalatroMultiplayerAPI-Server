@@ -13,6 +13,8 @@ export class BRMode {
     public minPlayers: number = 2
     public maxPlayers: number = 16
 
+    livesOption: number = 4
+
     constructor(lobby: Lobby) {
         this.lobby = lobby
     }
@@ -23,7 +25,7 @@ export class BRMode {
     public onLeaveLobby(client: Client, leftFully: boolean) {}
 
     public startGame() {
-        const lives = this.lobby.options.starting_lives
+        this.livesOption = this.lobby.options.starting_lives
         ? Number.parseInt(this.lobby.options.starting_lives)
         : GameModes[this.lobby.gameMode].startingLives;
 
@@ -34,8 +36,8 @@ export class BRMode {
             seed: this.lobby.options.different_seeds ? undefined : generateSeed(),
         });
         // Reset players' lives
-        this.lobby.setPlayersLives(lives);
-
+        this.lobby.setPlayersLives(this.livesOption);
+        
         // Roll for who is whose nemesis
         this.rerollEnemies();
 

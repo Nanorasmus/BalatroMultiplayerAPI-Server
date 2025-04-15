@@ -24,6 +24,13 @@ export class TeamBased extends HouseBased {
 		})
 	}
 
+	public override startGame() {
+		super.startGame();
+
+		// Set team lives
+		this.teams.forEach((team) => team.lives = this.livesOption);
+	}
+
 	public override onJoinLobby(client: Client): void {
 		
 		this.setPlayerTeam(client, "RED");
