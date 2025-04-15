@@ -248,10 +248,6 @@ const server = createServer((socket) => {
 					case 'stopGame':
 						actionHandlers.stopGame(client)
 						break
-					// Deprecated
-					case 'gameInfo':
-						actionHandlers.gameInfo(client)
-						break
 					case 'lobbyOptions':
 						actionHandlers.lobbyOptions(
 							actionArgs as ActionHandlerArgs<ActionLobbyOptions>,

@@ -135,7 +135,7 @@ class Client {
 			this.sendAction({ action: "loseGame" });
 			this.inMatch = false;
 
-			const potentialWinnerId = this.lobby?.getWinner()?.id;
+			const potentialWinnerId = this.lobby?.brMode.getWinner()?.id;
 
 			this.lobby?.checkGameOver();
 
@@ -154,7 +154,7 @@ class Client {
 				}
 			}
 	
-			this.lobby?.checkAllReady();
+			this.lobby?.brMode.checkAllReady();
 		}
 	}
 

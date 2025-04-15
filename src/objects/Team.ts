@@ -1,3 +1,4 @@
+import { TeamBased } from "./BRModes/HouseBased/TeamBased/TeamBased.js"
 import Client from "./Client.js"
 import Deck from "./Deck/Deck.js"
 import { InsaneInt } from "./InsaneInt.js"
@@ -6,6 +7,7 @@ import Lobby from "./Lobby.js"
 class Team {
     public id: string
     public lobby: Lobby
+    public BRMode: TeamBased
 
     public players: Client[] = []
 
@@ -27,9 +29,10 @@ class Team {
     deckChunks: string[] = []
     deckProvider: string | null = null
 
-	constructor(id: string, lobby: Lobby) {
+	constructor(id: string, lobby: Lobby, BRMode: TeamBased) {
 		this.id = id
         this.lobby = lobby
+        this.BRMode = BRMode
 	}
 
     addPlayer(client: Client) {
@@ -57,7 +60,7 @@ class Team {
         this.players.splice(this.players.indexOf(client), 1);
         
         if (this.players.length === 0) {
-            this.lobby.removeTeam(this);
+            this.BRMode.removeTeam(this);
         }
     }
 
@@ -185,6 +188,7 @@ class Team {
     endBlind = () => {
         this.inBlind = false;
         this.inPVPBlind = false;
+        this.score = new InsaneInt(0, 0, 0);
         this.players.forEach(player => {
             player.sendAction({ action: "endBlind" });
         });

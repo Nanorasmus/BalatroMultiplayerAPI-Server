@@ -39,6 +39,10 @@ import type {
 	ActionVersion,
 } from "./actions.js";
 import { generateSeed } from "./utils.js";
+import { TeamBased } from "./objects/BRModes/HouseBased/TeamBased/TeamBased.js";
+import { BRModeHivemind } from "./objects/BRModes/HouseBased/TeamBased/BRModeHivemind.js";
+import { BRModeDisabled } from "./objects/BRModes/Base/BRModeDisabled.js";
+import { BRModeNemesis } from "./objects/BRModes/Base/BRModeNemesis.js";
 
 const usernameAction = (
 	{ username, modHash }: ActionHandlerArgs<ActionUsername>,
@@ -116,64 +120,27 @@ const keepAliveAction = (client: Client) => {
 const startGameAction = (client: Client) => {
 	const lobby = client.lobby;
 	// Only allow the host to start the game
-	if (!lobby || !lobby.isHost(client) || lobby.isStarted) {
+	if (!lobby || !lobby.isHost(client) || lobby.isStarted || !lobby.brMode) {
 		return;
 	}
 
-	if (lobby.options["nano_br_mode"] == "hivemind" && lobby.teams.length < 2) {
-		client.sendAction({ action: "error", message: "Only one team has any players" });
+	if (lobby.brMode instanceof TeamBased && lobby.brMode.teams.length < lobby.brMode.minTeamCount) {
+		client.sendAction({ action: "error", message: "Not enough teams have players" });
 		return;
 	}
 
 	console.log("Starting game...");
 
-	const lives = lobby.options.starting_lives
-		? Number.parseInt(lobby.options.starting_lives)
-		: GameModes[lobby.gameMode].startingLives;
-	
-
-	lobby.broadcastAction({
-		action: "startGame",
-		deck: "c_multiplayer_1",
-		seed: lobby.options.different_seeds ? undefined : generateSeed(),
-	});
-	// Reset players' lives
-	lobby.setPlayersLives(lives);
-
-	// Roll for who is whose nemesis
-	if (lobby.options["nano_br_mode"] == "hivemind") {
-		lobby.rerollTeamEnemies();
-	} else {
-		lobby.rerollEnemies();
-	}
-	
-	// Set the game as started
-	lobby.isStarted = true;
-	lobby.broadcastLobbyInfo();
-
-	lobby.players.forEach((player) => {
-		player.inMatch = true;
-		player.isReady = false;
-		player.isReadyPVP = false;
-	});
-
-	if (lobby.options["nano_br_mode"] != "nemesis") {
-		lobby.broadcastAction({
-			action: "enemyInfo",
-			playerId: "house",
-			score: "0",
-			handsLeft: 0,
-			skips: 0,
-			lives: 0
-		})
-	}
+	lobby.brMode.startGame();
 };
 
 const setTeamAction = (
 	{ teamId }: ActionHandlerArgs<ActionSetTeamRequest>,
 	client: Client,
 ) => {
-	client.lobby?.setPlayerTeam(client, teamId);
+	if (client.lobby?.brMode instanceof TeamBased) {
+		client.lobby?.brMode.setPlayerTeam(client, teamId);
+	}
 };
 
 const readyBlindAction = (
@@ -195,7 +162,7 @@ const readyBlindAction = (
 	}
 
 	// Check if PVP blind should start
-	client.lobby?.checkAllReady();
+	client.lobby?.brMode.checkAllReady();
 };
 
 const unreadyBlindAction = (client: Client) => {
@@ -280,20 +247,18 @@ const playHandAction = (
 				roundLoser.sendAction({ action: "endPvP", lost: !roundWinner.score.equalTo(roundLoser.score) });
 				
 			}
-		} else if (lobby.options["nano_br_mode"] == "potluck") {
-			// Potluck
-			console.log("Played a hand in potluck")
-			lobby.recalculateScoreToBeat()
-			lobby.checkPotLuckDone()
-		} else if (lobby.options["nano_br_mode"] == "hivemind") {
-			// Hivemind
-			if (lobby.options["nano_br_mode"] == "hivemind") {
+		} else if (!(lobby.brMode instanceof BRModeDisabled || lobby.brMode instanceof BRModeNemesis)) {
+			
+			if (lobby.brMode instanceof TeamBased) {
 				client.team?.addScore(
 					InsaneInt.fromString((typeof scoreDelta === "string" && scoreDelta.indexOf("e") != -1) ? scoreDelta : `${scoreDelta}e0`),
 					InsaneInt.fromString((typeof blindChips === "string" && blindChips.indexOf("e") != -1) ? blindChips : `${blindChips}e0`)
 				);
 			}
-			lobby.checkHivemindDone()
+
+			console.log("Played a hand in potluck")
+			lobby.brMode.recalculateScoreToBeat()
+			lobby.brMode.checkPVPDone()
 		}
 	}
 	
@@ -305,11 +270,6 @@ const stopGameAction = (client: Client) => {
 		return;
 	}
 	client.sendAction({ action: "stopGame" });
-};
-
-// Deprecated
-const gameInfoAction = (client: Client) => {
-	client.lobby?.sendGameInfo(client);
 };
 
 const lobbyOptionsAction = (
@@ -627,7 +587,6 @@ export const actionHandlers = {
 	unreadyBlind: unreadyBlindAction,
 	playHand: playHandAction,
 	stopGame: stopGameAction,
-	gameInfo: gameInfoAction,
 	lobbyOptions: lobbyOptionsAction,
 	sendDeckType: sendDeckTypeAction,
 	sendDeck: sendDeckAction,
