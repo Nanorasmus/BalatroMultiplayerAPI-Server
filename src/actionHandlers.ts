@@ -568,7 +568,15 @@ const startAnteTimerAction = ({ time }: ActionHandlerArgs<ActionStartAnteTimer>,
 const failTimerAction = (client: Client) => {
 	const lobby = client.lobby;
 
-	client.loseLife();
+	if (client.team) {
+		if (!client.team.lostLifeToTimer) {
+			client.team.lostLifeToTimer = true;
+			
+			client.team.loseLife();
+		}
+	} else {
+		client.loseLife();
+	}
 }
 
 export const actionHandlers = {

@@ -27,6 +27,8 @@ class Team {
     public inPVPBlind: boolean = false
     public enemyTeam: Team | null = null
 
+    public lostLifeToTimer: boolean = false
+
     deckChunks: string[] = []
     deckProvider: string | null = null
 
@@ -240,6 +242,7 @@ class Team {
         if (this.lobby.isStarted && this.lives > 0 && (this.deckChunks.length > 0 || this.deck) && this.players.every(player => player.isReady || !player.inMatch)) {
             // Reset team score
             this.resetScore();
+            this.lostLifeToTimer = false;
 
             // Init deck from chunks if necessary
             if (!this.deck) {
