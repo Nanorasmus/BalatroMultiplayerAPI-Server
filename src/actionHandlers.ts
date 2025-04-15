@@ -568,6 +568,10 @@ const startAnteTimerAction = ({ time }: ActionHandlerArgs<ActionStartAnteTimer>,
 const failTimerAction = (client: Client) => {
 	const lobby = client.lobby;
 
+	if (!lobby || !client.inMatch) {
+		return;
+	}
+
 	if (client.team) {
 		if (!client.team.lostLifeToTimer) {
 			client.team.lostLifeToTimer = true;
