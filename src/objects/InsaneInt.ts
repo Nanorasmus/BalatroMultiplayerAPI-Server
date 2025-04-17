@@ -30,9 +30,9 @@ export class InsaneInt {
                 startingECount += Number(val.split('#')[1]);
                 val = val.split('#')[0];
             }
-            [coefficient, exponent] = val.split('e').map(Number);
+            [coefficient, exponent] = val.split('e').map(val => val == "inf" ? Infinity : Number(val));
         } else {
-            coefficient = Number(val);
+            coefficient = val == "inf" ? Infinity : Number(val);
             exponent = 0;
         }
 
@@ -45,7 +45,7 @@ export class InsaneInt {
             result += "e";
         }
 
-        result += this.coefficient;
+        result += this.coefficient == Infinity ? "inf" : this.coefficient;
         if (this.exponent != 0) {
             result += "e" + this.exponent;
         }
@@ -61,6 +61,9 @@ export class InsaneInt {
         if (this.exponent != other.exponent) {
             return this.exponent > other.exponent;
         }
+
+        if (this.coefficient == Infinity) return true;
+        if (other.coefficient == Infinity) return false;
 
         return this.coefficient > other.coefficient;
     }
@@ -142,6 +145,9 @@ export class InsaneInt {
     }
 
     add(other: InsaneInt) {
+        if (this.coefficient == Infinity) return this;
+        if (other.coefficient == Infinity) return other;
+
         // Balance the numbers
         this.balance();
         other.balance();
@@ -182,11 +188,14 @@ export class InsaneInt {
         }
         
         let result = new InsaneInt(startingECount, coefficient, exponent);
-        result.balance();
+
+        if (result.coefficient != Infinity) result.balance();
         return result;
     }
 
     div(other: InsaneInt) {
+        if (this.coefficient == Infinity) return this;
+        if (other.coefficient == Infinity) return new InsaneInt(0, 0, 0);
         // Balance the numbers
         this.balance();
         other.balance();
