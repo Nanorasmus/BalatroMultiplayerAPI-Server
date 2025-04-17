@@ -246,6 +246,11 @@ class Team {
 
             // Init deck from chunks if necessary
             if (!this.deck) {
+                if (this.deckChunks.length == 0) {
+                    setTimeout(() => this.checkAllReady(), 1000);
+                    return;
+                };
+
                 this.deck = new Deck(this, this.deckChunks.join("|"));
                 this.deckChunks = [];
             }
