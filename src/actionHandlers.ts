@@ -5,6 +5,7 @@ import Lobby, { getEnemy } from "./objects/Lobby.js";
 import type {
 	ActionAddCard,
 	ActionChangeHandLevel,
+	ActionCopyCard,
 	ActionCreateLobby,
 	ActionEatPizza,
 	ActionHandlerArgs,
@@ -301,6 +302,40 @@ const sendDeckAction = (
 	client.team.setDeck(client, deck);
 }
 
+
+const addCardAction = (
+	{ card }: ActionHandlerArgs<ActionAddCard>,
+	client: Client,
+) => {
+	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team || !client.inMatch) {
+		return;
+	}
+	
+	client.team?.deck?.addCard(card)
+}
+
+const removeCardAction = (
+	{ card }: ActionHandlerArgs<ActionRemoveCard>,
+	client: Client,
+) => {
+	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team || !client.inMatch) {
+		return;
+	}
+	
+	client.team?.deck?.removeCard(card)	
+}
+
+const copyCardAction = (
+	{ card, target }: ActionHandlerArgs<ActionCopyCard>,
+	client: Client,
+) => {
+	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team || !client.inMatch) {
+		return;
+	}
+	
+	client.team?.deck?.copyCard(card, target)
+}
+
 const setCardSuitAction = (
 	{ card, suit }: ActionHandlerArgs<ActionSetCardSuit>,
 	client: Client,
@@ -356,27 +391,6 @@ const setCardSealAction = (
 	client.team?.deck?.setSeal(card, seal)
 }
 
-const addCardAction = (
-	{ card }: ActionHandlerArgs<ActionAddCard>,
-	client: Client,
-) => {
-	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team || !client.inMatch) {
-		return;
-	}
-	
-	client.team?.deck?.addCard(card)
-}
-
-const removeCardAction = (
-	{ card }: ActionHandlerArgs<ActionRemoveCard>,
-	client: Client,
-) => {
-	if (!client.lobby || client.lobby.options["nano_br_mode"] != "hivemind" || !client.team || !client.inMatch) {
-		return;
-	}
-	
-	client.team?.deck?.removeCard(card)	
-}
 
 const changeHandLevelAction = (
 	{ hand, amount }: ActionHandlerArgs<ActionChangeHandLevel>,
@@ -602,13 +616,14 @@ export const actionHandlers = {
 	lobbyOptions: lobbyOptionsAction,
 	sendDeckType: sendDeckTypeAction,
 	sendDeck: sendDeckAction,
+	addCard: addCardAction,
+	removeCard: removeCardAction,
+	copyCard: copyCardAction,
 	setCardSuit: setCardSuitAction,
 	setCardRank: setCardRankAction,
 	setCardEnhancement: setCardEnhancementAction,
 	setCardEdition: setCardEditionAction,
 	setCardSeal: setCardSealAction,
-	addCard: addCardAction,
-	removeCard: removeCardAction,
 	changeHandLevel: changeHandLevelAction,
 	failRound: failRoundAction,
 	setAnte: setAnteAction,

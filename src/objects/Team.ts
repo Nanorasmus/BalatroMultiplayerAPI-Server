@@ -1,3 +1,4 @@
+import { ActionServerToClient } from "../actions.js"
 import { TeamBased } from "./BRModes/HouseBased/TeamBased/TeamBased.js"
 import Client from "./Client.js"
 import Deck from "./Deck/Deck.js"
@@ -256,7 +257,9 @@ class Team {
             }
             
             // Give everyone an updated deck
-            this.deck?.applyPendingActions();
+            if (this.deck.syncPending) {
+                this.broadcastDeck();
+            }
 
             this.inBlind = true;
 
@@ -291,9 +294,17 @@ class Team {
         return handsLeft;
     }
     
+    broadcastAction(action: ActionServerToClient) {
+        this.players.forEach(player => {
+            if (player.lives <= 0 || !player.inMatch) return;
+            player.sendAction(action);
+        });
+    }
 
     broadcastDeck() {
         if (this.deck == null) return;
+
+        this.deck.syncPending = false;
 
         this.players.forEach(player => {
             if (player.lives <= 1 || !player.inMatch) return;

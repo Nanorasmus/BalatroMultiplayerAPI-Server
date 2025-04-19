@@ -6,6 +6,7 @@ import type {
 	ActionAddCard,
 	ActionChangeHandLevel,
 	ActionClientToServer,
+	ActionCopyCard,
 	ActionCreateLobby,
 	ActionEatPizza,
 	ActionHandlerArgs,
@@ -266,6 +267,24 @@ const server = createServer((socket) => {
 							client
 						)
 						break
+					case 'addCard':
+						actionHandlers.addCard(
+							actionArgs as ActionHandlerArgs<ActionAddCard>,
+							client
+						)
+						break
+					case 'removeCard':
+						actionHandlers.removeCard(
+							actionArgs as ActionHandlerArgs<ActionRemoveCard>,
+							client
+						)
+						break
+					case 'copyCard':
+						actionHandlers.copyCard(
+							actionArgs as ActionHandlerArgs<ActionCopyCard>,
+							client
+						)
+						break
 					case "setCardSuit":
 						actionHandlers.setCardSuit(
 							actionArgs as ActionHandlerArgs<ActionSetCardSuit>,
@@ -293,18 +312,6 @@ const server = createServer((socket) => {
 					case 'setCardSeal':
 						actionHandlers.setCardSeal(
 							actionArgs as ActionHandlerArgs<ActionSetCardSeal>,
-							client
-						)
-						break
-					case 'addCard':
-						actionHandlers.addCard(
-							actionArgs as ActionHandlerArgs<ActionAddCard>,
-							client
-						)
-						break
-					case 'removeCard':
-						actionHandlers.removeCard(
-							actionArgs as ActionHandlerArgs<ActionRemoveCard>,
 							client
 						)
 						break

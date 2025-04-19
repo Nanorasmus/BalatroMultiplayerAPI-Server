@@ -54,7 +54,9 @@ export class TeamBased extends HouseBased {
     }
 	
     public override startPVPBlind() {
-		this.teams.forEach((team) => team.deck?.applyPendingActions());
+		this.teams.forEach((team) => {
+			if (team.deck?.syncPending) team.broadcastDeck();
+		});
 
 		super.startPVPBlind();
 		

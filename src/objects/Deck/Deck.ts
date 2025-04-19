@@ -9,7 +9,8 @@ class Deck {
     public cards: Card[]
 
 	public pendingActions: DeckAction[] = []
-	public tempCardIds: { [key: string]: Card } = {}
+	
+	syncPending: boolean = true
 
 	constructor(team: Team, deckStr: string) {
 		this.team = team;
@@ -25,112 +26,106 @@ class Deck {
 		}
 
 		const card = new Card(this, cardStrSplit[1]);
-		this.tempCardIds[cardStrSplit[0]] = card;
-		this.pendingActions.push(new DeckAction(DeckActionType.ADD_CARD, card));
+		
+		this.cards.push(card);
+
+		this.team.broadcastAction({ action: "addCard", tempId: cardStrSplit[0], card: card.toString() });
 	}
 
 	removeCard(id: string) {
-		this.pendingActions.push(new DeckAction(DeckActionType.REMOVE_CARD, id));
+		this.cards.splice(this.getCardIndex(id), 1);
+
+		this.team.broadcastAction({ action: "removeCard", card: id });
+	}
+
+	copyCard(id: string, targetId: string) {
+		const card = this.getCard(id);
+		const target = this.getCard(targetId);
+		console.log(card ? card.toString() : "null", target ? target.toString() : "null");
+		if (card && target) {
+			card.suit = target.suit;
+			card.rank = target.rank;
+			card.enhancement = target.enhancement;
+			card.edition = target.edition;
+			card.seal = target.seal;
+
+			this.team.broadcastAction({ action: "copyCard", card: id, target: targetId });
+		} else {
+			this.syncPending = true;
+		}
 	}
 
 	setSuit(id: string, suit: string) {
-		this.pendingActions.push(new DeckAction(DeckActionType.CHANGE_CARD, id, CardKey.SUIT, suit));
+		suit = suit.charAt(0);
+
+		const card = this.getCard(id);
+		if (card) {
+			card.suit = suit;
+		} else {
+			this.syncPending = true;
+		}
+
+		this.team.broadcastAction({ action: "setCardSuit", card: id, suit: suit });
 	}
 
 	setRank(id: string, rank: string) {
-		this.pendingActions.push(new DeckAction(DeckActionType.CHANGE_CARD, id, CardKey.RANK, rank + ".0"));
+		if (rank == "10") rank = "T";
+		
+		const card = this.getCard(id);
+		if (card) {
+			card.rank = rank;
+		} else {
+			this.syncPending = true;
+		}
+
+		this.team.broadcastAction({ action: "setCardRank", card: id, rank: rank });
 	}
 
 	setEnhancement(id: string, enhancement: string) {
-		this.pendingActions.push(new DeckAction(DeckActionType.CHANGE_CARD, id, CardKey.ENHANCEMENT, enhancement));
+		const card = this.getCard(id);
+		if (card) {
+			card.enhancement = enhancement;
+		} else {
+			this.syncPending = true;
+		}
+
+		this.team.broadcastAction({ action: "setCardEnhancement", card: id, enhancement: enhancement });
 	}
 
 	setEdition(id: string, edition: string) {
-		this.pendingActions.push(new DeckAction(DeckActionType.CHANGE_CARD, id, CardKey.EDITION, edition));
+		const card = this.getCard(id);
+		if (card) {
+			card.edition = edition;
+		} else {
+			this.syncPending = true;
+		}
+
+		this.team.broadcastAction({ action: "setCardEdition", card: id, edition: edition });
 	}
 
 	setSeal(id: string, seal: string) {
-		this.pendingActions.push(new DeckAction(DeckActionType.CHANGE_CARD, id, CardKey.SEAL, seal));
+		const card = this.getCard(id);
+		if (card) {
+			card.seal = seal;
+		} else {
+			this.syncPending = true;
+		}
+
+		this.team.broadcastAction({ action: "setCardSeal", card: id, seal: seal });
 	}
 
 
 	getCard(id: string): Card | undefined {
 		return this.cards.find(card => card.equals(id));
 	}
+
+	getCardIndex(id: string): number {
+		return this.cards.findIndex(card => card.equals(id));
+	}
 	
 
 	toString(): string {
 		return this.cards.map(card => card.toString()).join("|");
-	}
-
-	applyPendingActions() {
-		// Sort them after priority
-		this.pendingActions = this.pendingActions.sort((a, b) => a.shouldPrioritizeOver(b));
-
-		// Apply changes
-		this.pendingActions.forEach(action => {
-			// Check if the card still exists despite previous actions (Assuming it is not an add card action)
-			let card: Card;
-			if (action.type != DeckActionType.ADD_CARD) {
-				if (!action.card) return;
-				
-				if ((typeof(action.card) == "string" && this.tempCardIds[action.card])) {
-					card = this.tempCardIds[action.card];
-				} else {
-					let cardIndex: number = this.cards.findIndex(card => card.equals(action.card!))
-					if (cardIndex == -1) return;
-					card = this.cards[cardIndex];
-				}
-			} else {
-				// Adding a card requires an actual card
-				if (!action.card || typeof(action.card) == "string") return;
-
-				card = action.card;
-			}
-
-			switch (action.type) {
-				case DeckActionType.ADD_CARD:
-					if (action.card && typeof action.card != "string") {
-						this.cards.push(action.card);
-					}
-					break;
-
-				case DeckActionType.REMOVE_CARD:
-					let index = this.cards.findIndex(potentialCard => potentialCard.equals(card));
-					if (index != -1) this.cards.splice(index, 1);
-					break;
-
-				case DeckActionType.CHANGE_CARD:
-					if (!action.key || !action.value) return;
-					switch (action.key) {
-						case CardKey.SUIT:
-							card.suit = action.value.charAt(0);
-							break;
-						case CardKey.RANK:
-							if (action.value == "10") {
-								card.rank = "T";
-							} else {
-								card.rank = action.value.charAt(0);
-							}
-							break;
-						case CardKey.ENHANCEMENT:
-							card.enhancement = action.value;
-							break;
-						case CardKey.EDITION:
-							card.edition = action.value.startsWith("e_") ? action.value.substring(2) : action.value;
-							break;
-						case CardKey.SEAL:
-							card.seal = action.value;
-							break;
-					}
-					break;
-			}
-		});
-
-		this.pendingActions = [];
-		this.tempCardIds = {};
-
-		this.team.broadcastDeck();
 	}
 }
 
