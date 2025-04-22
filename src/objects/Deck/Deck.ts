@@ -69,7 +69,8 @@ class Deck {
 	}
 
 	setRank(id: string, rank: string) {
-		if (rank == "10") rank = "T";
+		if (rank.startsWith("10")) rank = "T";
+		rank = rank.charAt(0);
 		
 		const card = this.getCard(id);
 		if (card) {
@@ -96,11 +97,12 @@ class Deck {
 		const card = this.getCard(id);
 		if (card) {
 			card.edition = edition;
+			if (card.edition.startsWith("e_")) card.edition = card.edition.substring(2);
 		} else {
 			this.syncPending = true;
 		}
 
-		this.team.broadcastAction({ action: "setCardEdition", card: id, edition: edition });
+		this.team.broadcastAction({ action: "setCardEdition", card: id, edition: card ? card.edition : "none" });
 	}
 
 	setSeal(id: string, seal: string) {

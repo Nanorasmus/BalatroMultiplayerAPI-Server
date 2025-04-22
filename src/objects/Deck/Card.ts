@@ -28,6 +28,7 @@ class Card {
 
         this.enhancement = split[2];
         this.edition = split[3];
+        if (this.edition.startsWith("e_")) this.edition = this.edition.substring(2);
         this.seal = split[4];
     }
 
