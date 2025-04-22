@@ -2,7 +2,7 @@ import { randomInt } from "../../../../utils.js";
 import Client from "../../../Client.js";
 import { InsaneInt } from "../../../InsaneInt.js";
 import Lobby from "../../../Lobby.js";
-import Team from "../../../Team.js";
+import Team from "./Team.js";
 import { HouseBased } from "../HouseBased.js";
 
 

@@ -1,6 +1,6 @@
 import { InsaneInt } from "../../../InsaneInt.js";
 import Lobby from "../../../Lobby.js";
-import Team from "../../../Team.js";
+import Team from "./Team.js";
 import { TeamBased } from "./TeamBased.js";
 
 export class BRModeHivemind extends TeamBased {

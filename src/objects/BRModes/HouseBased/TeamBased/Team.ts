@@ -1,9 +1,9 @@
-import { ActionServerToClient } from "../actions.js"
-import { TeamBased } from "./BRModes/HouseBased/TeamBased/TeamBased.js"
-import Client from "./Client.js"
+import { ActionServerToClient } from "../../../../actions.js"
+import { TeamBased } from "./TeamBased.js"
+import Client from "../../../Client.js"
 import Deck from "./Deck/Deck.js"
-import { InsaneInt } from "./InsaneInt.js"
-import Lobby from "./Lobby.js"
+import { InsaneInt } from "../../../InsaneInt.js"
+import Lobby from "../../../Lobby.js"
 
 class Team {
     public id: string

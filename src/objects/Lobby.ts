@@ -10,7 +10,7 @@ import { preProcessStringForNetworking } from "../utils.js";
 import { serializeObject } from "../main.js";
 import { actionHandlers } from "../actionHandlers.js";
 import { InsaneInt } from "./InsaneInt.js";
-import Team from "./Team.js";
+import Team from "./BRModes/HouseBased/TeamBased/Team.js";
 import { BRMode } from "./BRModes/BRMode.js";
 import { BRModeDisabled } from "./BRModes/Base/BRModeDisabled.js";
 import { BRModeNemesis } from "./BRModes/Base/BRModeNemesis.js";
