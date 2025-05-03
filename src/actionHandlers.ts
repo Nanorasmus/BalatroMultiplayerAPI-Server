@@ -424,7 +424,7 @@ const setAnteAction = (
 	client.ante = ante;
 };
 
-const serverVersion = "1.0.6";
+const serverVersion = "1.0.7";
 /** Verifies the client version and allows connection if it matches the server's */
 const versionAction = (
 	{ version }: ActionHandlerArgs<ActionVersion>,
