@@ -48,11 +48,11 @@ class Deck {
 			card.enhancement = target.enhancement;
 			card.edition = target.edition;
 			card.seal = target.seal;
-
-			this.team.broadcastAction({ action: "copyCard", card: id, target: targetId });
 		} else {
-			this.syncPending = true;
+			// this.syncPending = true;
 		}
+
+		this.team.broadcastAction({ action: "copyCard", card: id, target: targetId });
 	}
 
 	setSuit(id: string, suit: string) {
@@ -62,7 +62,7 @@ class Deck {
 		if (card) {
 			card.suit = suit;
 		} else {
-			this.syncPending = true;
+			// this.syncPending = true;
 		}
 
 		this.team.broadcastAction({ action: "setCardSuit", card: id, suit: suit });
@@ -76,7 +76,7 @@ class Deck {
 		if (card) {
 			card.rank = rank;
 		} else {
-			this.syncPending = true;
+			// this.syncPending = true;
 		}
 
 		this.team.broadcastAction({ action: "setCardRank", card: id, rank: rank });
@@ -87,7 +87,7 @@ class Deck {
 		if (card) {
 			card.enhancement = enhancement;
 		} else {
-			this.syncPending = true;
+			// this.syncPending = true;
 		}
 
 		this.team.broadcastAction({ action: "setCardEnhancement", card: id, enhancement: enhancement });
@@ -99,7 +99,7 @@ class Deck {
 			card.edition = edition;
 			if (card.edition.startsWith("e_")) card.edition = card.edition.substring(2);
 		} else {
-			this.syncPending = true;
+			// this.syncPending = true;
 		}
 
 		this.team.broadcastAction({ action: "setCardEdition", card: id, edition: card ? card.edition : "none" });
@@ -110,7 +110,7 @@ class Deck {
 		if (card) {
 			card.seal = seal;
 		} else {
-			this.syncPending = true;
+			// this.syncPending = true;
 		}
 
 		this.team.broadcastAction({ action: "setCardSeal", card: id, seal: seal });
