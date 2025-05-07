@@ -43,7 +43,7 @@ import type {
 } from './actions.js'
 import { InsaneInt } from './objects/InsaneInt.js'
 
-const PORT = 8788
+const PORT = 6858
 
 /** The amount of milliseconds we wait before sending the initial keepalive packet  */
 const KEEP_ALIVE_INITIAL_TIMEOUT = 5000

@@ -5,8 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8788:8788"
-      - "49484:8788"
+      - "6858:6858"
     environment:
       NODE_ENV: development
     restart: unless-stopped
