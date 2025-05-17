@@ -6,6 +6,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "6858:6858"
+      - "6858:8788"
+
     environment:
       NODE_ENV: development
     restart: unless-stopped

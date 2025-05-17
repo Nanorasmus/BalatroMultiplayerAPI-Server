@@ -98,7 +98,17 @@ export class InsaneInt {
     }
 
     balance() {
+        // Some infinite loop protection
+        if (this.coefficient == Infinity) return;
+        let i = 0;
+        
         while (!this.isBalanced()) {
+            if (i > 50) {
+                console.error(`Failed to balance ${this.toString()}! BIG PROBLEM!`);
+                return
+            }
+            i += 1;
+
             if (this.coefficient === 0) {
                 this.exponent = 0;
                 this.startingECount = 0;
@@ -135,7 +145,7 @@ export class InsaneInt {
                 this.exponent /= Math.pow(10, change);
                 this.startingECount += change;
             }
-            if (this.exponent != 0 && this.exponent < 1000000 && this.startingECount != 0) {
+            if (this.exponent > 0 && this.exponent < 1000000 && this.startingECount != 0) {
                 let change = 5 - Math.floor(this.exponent).toString().length;
                 if (change >= this.startingECount) change = this.startingECount - 1;
                 this.exponent *= Math.pow(10, change);
@@ -151,6 +161,8 @@ export class InsaneInt {
         // Balance the numbers
         this.balance();
         other.balance();
+
+        console.log("Adding " + this.toString() + " to " + other.toString());
 
         // Make the exponents the same
         let startingECount;
